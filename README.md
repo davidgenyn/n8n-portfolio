@@ -13,6 +13,7 @@ Dagelijkse geplande backup: kopieert alle bestanden uit een bronmap naar een bac
 
 - Schedule Trigger (dagelijks) → Drive Search → Drive Copy
 - OAuth 2.0-credential via eigen Google Cloud-project
+  ![Workflow](project1.png)
 
 ## Project 2 — Gmail AI-classificatie
 Classificeert elke inkomende mail automatisch in vijf categorieën (Factuur, Sollicitatie, 
@@ -20,6 +21,7 @@ Trading, Nieuwsbrief, Overig) en zet het bijhorende Gmail-label.
 
 - Gmail Trigger (polling elke 5 min) → Text Classifier (Claude Haiku) → Add Label per categorie
 - Categoriebeschrijvingen fungeren als prompt; bijgestuurd op basis van echte mailstroom
+  ![Workflow](project2.png)
 
 ## Project 3 — Factuur-extractor
 Leest PDF-facturen uit inkomende mail, extraheert gestructureerde velden met AI en 
@@ -34,9 +36,9 @@ schrijft ze als rij naar een Google Sheet.
 - Eén PDF-bijlage per mail wordt verwerkt (attachment_0)
 - Geen dubbel-detectie bij herverwerking van dezelfde mail
 
-![Workflow](project1.png)
-![Workflow](project2.png)
 ![Workflow](project3.png)
+
+
 
 ## Achtergrond
 
