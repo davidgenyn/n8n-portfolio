@@ -34,9 +34,13 @@ schrijft ze als rij naar een Google Sheet.
 - Eén PDF-bijlage per mail wordt verwerkt (attachment_0)
 - Geen dubbel-detectie bij herverwerking van dezelfde mail
 
----
+![Workflow](project1.png)
+![Workflow](project2.png)
+![Workflow](project3.png)
 
 ## Achtergrond
+
+
 Automatiseringservaring uit een eerder traject: 100+ NinjaTrader-strategieën (NinjaScript/C#) 
 ontwikkeld met AI-ondersteunde workflow. [pas aan of verwijder naar smaak]
 
