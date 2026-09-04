@@ -1,0 +1,351 @@
+{
+  "name": "Project 3 - Factuur extractor",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        16
+      ],
+      "id": "a0ccfdd1-50c3-4ad4-8376-3fb55a6c44cd",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "is_factuur",
+              "type": "boolean",
+              "description": "true als dit document een factuur of betalingsbewijs is, anders false"
+            },
+            {
+              "name": "datum",
+              "description": "Factuurdatum in formaat YYYY-MM-DD"
+            },
+            {
+              "name": "leverancier",
+              "description": "Het factuur- of ordernummer"
+            },
+            {
+              "name": "factuurnummer",
+              "description": "Het factuur- of ordernummer"
+            },
+            {
+              "name": "totaal",
+              "type": "number",
+              "description": "\tTotaalbedrag inclusief btw, alleen het getal, punt als decimaalteken"
+            },
+            {
+              "name": "btw",
+              "type": "number",
+              "description": "Btw-bedrag, alleen het getal; 0 als niet vermeld"
+            },
+            {
+              "name": "valuta",
+              "description": "Valutacode zoals EUR of USD"
+            },
+            {
+              "name": "onderwerp",
+              "description": "Korte omschrijving van wat er gefactureerd wordt"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        192,
+        16
+      ],
+      "id": "30f5a603-4b45-425e-b160-c2081095d8d4",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [
+        192,
+        208
+      ],
+      "id": "49ebe691-c162-4030-97db-93270670873c",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "VdlFt0KHqZCz2fzQ",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4a345fb0-67e2-40e6-bf89-949ac6fdb151",
+              "leftValue": "={{ $json.output.is_factuur }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        16
+      ],
+      "id": "6ac30828-c72f-4a8a-bb91-78e5c9850ea5",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1NwKhoA4CNvf4HW1n6rzOiKBMVSkszlQfDMynNAd1uFk",
+          "mode": "list",
+          "cachedResultName": "Facturen",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NwKhoA4CNvf4HW1n6rzOiKBMVSkszlQfDMynNAd1uFk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Blad1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NwKhoA4CNvf4HW1n6rzOiKBMVSkszlQfDMynNAd1uFk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "datum": "={{ $json.output.datum }}",
+            "leverancier": "={{ $json.output.leverancier }}",
+            "factuurnummer": "={{ $json.output.factuurnummer }}",
+            " totaal": "={{ $json.output.totaal }}",
+            "btw": "={{ $json.output.btw }}",
+            "valuta": "={{ $json.output.valuta }}",
+            "onderwerp": "={{ $json.output.onderwerp }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "datum",
+              "displayName": "datum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "leverancier",
+              "displayName": "leverancier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "factuurnummer",
+              "displayName": "factuurnummer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " totaal",
+              "displayName": " totaal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "btw",
+              "displayName": "btw",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "valuta",
+              "displayName": "valuta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "onderwerp",
+              "displayName": "onderwerp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        784,
+        -80
+      ],
+      "id": "347ffd31-1b2a-41e4-a839-c24fd6358144",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XN6CNnVo3DN0vtu1",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "has:attachment filename:pdf"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -288,
+        16
+      ],
+      "id": "d4462f45-9d0a-4348-a272-1c081ab684c7",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uuAT82uIQidWsNUn",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f0c1ba3a-b0e5-406b-a7d9-81beaea8b86d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ea699500941c4b16d9bdcf703104ae0507ab3a567a4538d39011aa4bdf42ee7"
+  },
+  "nodeGroups": [],
+  "id": "vbuY4O3hKcmrkLUY",
+  "tags": []
+}

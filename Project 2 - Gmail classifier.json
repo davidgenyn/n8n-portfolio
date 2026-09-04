@@ -1,0 +1,293 @@
+{
+  "name": "Project 2 - Gmail classifier",
+  "nodes": [
+    {
+      "parameters": {
+        "inputText": "=Van: {{ $json.From }}\nOnderwerp: {{ $json.Subject }}\nInhoud: {{ $json.snippet }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Factuur",
+              "description": "Facturen, betalingsverzoeken, betalingsbevestigingen, ontvangstbewijzen, betalingsherinneringen"
+            },
+            {
+              "category": "Sollicitatie",
+              "description": "Vacatures, sollicitaties, berichten van recruiters, jobsites, uitnodigingen voor gesprekken"
+            },
+            {
+              "category": "Trading",
+              "description": "NinjaTrader, brokers, tradingplatformen, trade-meldingen, orderbevestigingen, marktdata"
+            },
+            {
+              "category": "Nieuwsbrief",
+              "description": "Als het onderwerp het woord \"nieuwsbrief\" bevat, altijd deze categorie.Nieuwsbrieven, promoties, marketingmails, aankondigingen en notificaties van diensten"
+            },
+            {
+              "category": "Overig",
+              "description": "Alles wat niet in een van de andere categorieën past, inclusief persoonlijke mails"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        -48
+      ],
+      "id": "485eaac8-e3cd-4516-b760-3ab8f4639d7f",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [
+        -128,
+        192
+      ],
+      "id": "31da8e71-68d4-4ef7-a490-aa208a07b990",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "VdlFt0KHqZCz2fzQ",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_4858224070554602302"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        368,
+        -352
+      ],
+      "id": "cc6b8b53-24ac-49fa-bf8b-e4e9eaa8b12c",
+      "name": "Add label to message",
+      "webhookId": "3713d859-a494-4020-949a-043f5d7ef048",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uuAT82uIQidWsNUn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_7364748548943892156"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        416,
+        -208
+      ],
+      "id": "01f43704-67ee-486c-a70c-51fee689bd89",
+      "name": "Add label to message1",
+      "webhookId": "ccb2a1fa-fe8f-451c-b4f3-648a35c624d8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uuAT82uIQidWsNUn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_223853840577123334"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        -112
+      ],
+      "id": "e0b12ef9-92fc-4979-acf0-fbb5fbe55c94",
+      "name": "Add label to message2",
+      "webhookId": "ad2978ce-2985-4585-aa18-2b444c97c7fc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uuAT82uIQidWsNUn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_4328766468182417815"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "f011abab-434e-4d65-bfe0-2feb263a2603",
+      "name": "Add label to message3",
+      "webhookId": "e23f05a2-90e4-48fb-bf74-8bc6dc0ee794",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uuAT82uIQidWsNUn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_6779027211661603011"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        176
+      ],
+      "id": "ac05466a-9be3-48b2-ae52-a09fb45ab8df",
+      "name": "Add label to message4",
+      "webhookId": "4288932b-eaa6-488a-8634-92a31dfa6c1e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uuAT82uIQidWsNUn",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -496,
+        0
+      ],
+      "id": "8ac2f5c0-6dae-474b-882e-3ed5c76fd37a",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "uuAT82uIQidWsNUn",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add label to message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2cd72c9d-a53a-44bd-b650-b228ed01ff84",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ea699500941c4b16d9bdcf703104ae0507ab3a567a4538d39011aa4bdf42ee7"
+  },
+  "nodeGroups": [],
+  "id": "QhCEjdJHq4vpnipK",
+  "tags": []
+}
