@@ -29,13 +29,12 @@ schrijft ze als rij naar een Google Sheet.
 
 - Gmail Trigger (filter: PDF-bijlagen) → Extract from File (PDF→tekst) → 
   Information Extractor (8 attributen, getypeerd: Boolean/Number/String) → 
-  IF (is_factuur) → Sheets Append Row
+  IF (is_factuur) → Sheets Append/Update Row
 - Herkent datumformaten en valuta (EUR/USD) correct
 
 **Known limitations (bewust genoteerd):**
 - Eén PDF-bijlage per mail wordt verwerkt (attachment_0)
-- Geen dubbel-detectie bij herverwerking van dezelfde mail
-
+-
 ![Workflow](project3.png)
 
 
