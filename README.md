@@ -49,7 +49,7 @@ en schrijft het resultaat als historiek naar een Google Sheet.
 - Dubbel-detectie via samengestelde sleutel (datum + valuta)
 - Twee externe dataformaten (XML en GraphQL) samengevoegd in één rapport
 
-![Workflow](project4.png)
+
 
 
 ## Achtergrond
