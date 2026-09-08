@@ -38,6 +38,19 @@ schrijft ze als rij naar een Google Sheet.
 ![Workflow](project3.png)
 
 
+## Project 4 — Valutamonitor
+Haalt dagelijks de eurokoersen op bij de Europese Centrale Bank (XML),
+vraagt per valuta via GraphQL op welke landen die munt gebruiken,
+en schrijft het resultaat als historiek naar een Google Sheet.
+
+- Schedule Trigger (dagelijks 17:00) → HTTP Request (ECB XML) →
+  XML→JSON → Edit Fields → Split Out → GraphQL (Countries API) →
+  Sheets Append/Update Row
+- Dubbel-detectie via samengestelde sleutel (datum + valuta)
+- Twee externe dataformaten (XML en GraphQL) samengevoegd in één rapport
+
+![Workflow](project4.png)
+
 
 ## Achtergrond
 
