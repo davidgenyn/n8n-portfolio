@@ -1,0 +1,288 @@
+{
+  "name": "Project 4 - Valutamonitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 17
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -720,
+        0
+      ],
+      "id": "5674c059-826c-4468-9d1e-055d9ad9cda1",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -528,
+        0
+      ],
+      "id": "17421e39-2611-4bdb-88ad-8e74a8caa1e6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        16
+      ],
+      "id": "99c484aa-c275-4799-b95b-644f804134b8",
+      "name": "XML"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "426688dc-0b1f-40b6-b255-a21e9f37c103",
+              "name": "datum",
+              "value": "={{ $json['gesmes:Envelope'].Cube.Cube.time }}",
+              "type": "string"
+            },
+            {
+              "id": "a6e49863-d0ef-4614-9569-95cad660075a",
+              "name": "koersen",
+              "value": "={{ $json['gesmes:Envelope'].Cube.Cube.Cube }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -112,
+        16
+      ],
+      "id": "9576f35e-d70c-4fbe-a909-4a6c97bf864e",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "koersen",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        80,
+        16
+      ],
+      "id": "1c50ce4e-3134-4201-9323-9cad10d9a540",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "endpoint": "https://countries.trevorblades.com/",
+        "query": "={ countries(filter: { currency: { eq: \"{{ $json.koersen.currency }}\" } }) { name } }"
+      },
+      "type": "n8n-nodes-base.graphql",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        16
+      ],
+      "id": "23d964cc-085a-4a6f-8a3d-01735c914462",
+      "name": "GraphQL"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1UlZJtT7KPGHvEwILwMhnheWz3s6YG_1Lw67uTO6Jqe8",
+          "mode": "list",
+          "cachedResultName": "Valutamonitor",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UlZJtT7KPGHvEwILwMhnheWz3s6YG_1Lw67uTO6Jqe8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Blad1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1UlZJtT7KPGHvEwILwMhnheWz3s6YG_1Lw67uTO6Jqe8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sleutel": "={{ $(\"Split Out\").item.json.datum }}-{{ $(\"Split Out\").item.json.koersen.currency }}",
+            "datum": "={{ $(\"Split Out\").item.json.datum }}",
+            "valuta": "={{ $(\"Split Out\").item.json.koersen.currency }}",
+            "koers": "={{ $(\"Split Out\").item.json.koersen.rate }}",
+            " landen": "={{ $json.data.countries.map(c => c.name).join(', ') }}"
+          },
+          "matchingColumns": [
+            "sleutel"
+          ],
+          "schema": [
+            {
+              "id": "sleutel",
+              "displayName": "sleutel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "datum",
+              "displayName": "datum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "valuta",
+              "displayName": "valuta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "koers",
+              "displayName": "koers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " landen",
+              "displayName": " landen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        480,
+        16
+      ],
+      "id": "a31cf00c-1edc-4440-b019-5d235ab1ab16",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XN6CNnVo3DN0vtu1",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XML": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "GraphQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GraphQL": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "314ff4a1-ba26-4f29-9d4e-be655228a79c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ea699500941c4b16d9bdcf703104ae0507ab3a567a4538d39011aa4bdf42ee7"
+  },
+  "nodeGroups": [],
+  "id": "uj6MTutbVr3SaFhS",
+  "tags": []
+}
