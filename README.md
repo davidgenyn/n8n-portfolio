@@ -56,6 +56,6 @@ en schrijft het resultaat als historiek naar een Google Sheet.
 
 
 Automatiseringservaring uit een eerder traject: 100+ NinjaTrader-strategieën (NinjaScript/C#) 
-ontwikkeld met AI-ondersteunde workflow. [pas aan of verwijder naar smaak]
+ontwikkeld met AI-ondersteunde workflow. 
 
-Contact: [lotusflow.contact@gmail.com]
+Contact: lotusflow.contact@gmail.com
