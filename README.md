@@ -51,6 +51,22 @@ en schrijft het resultaat als historiek naar een Google Sheet.
 
 ![Workflow](project4.png)
 
+## Project 5 — Outlook AI-classificatie
+Sorteert inkomende Outlook-mail automatisch in mappen op basis van
+AI-classificatie. Microsoft 365 is de standaard bij Belgische KMO's,
+waardoor dit de zakelijk meest bruikbare variant van project 2 is.
+
+- Microsoft Outlook Trigger (elke 5 min) → Text Classifier (Claude Haiku,
+  5 categorieën) → HTTP Request per categorie (Microsoft Graph API)
+- Eigen app-registratie in Microsoft Entra ID met OAuth2 en
+  gedelegeerde Graph-rechten (Mail.ReadWrite, offline_access)
+- De ingebouwde Outlook-node bleek het bericht-ID uit een expressie niet
+  correct door te geven (bekend probleem, 400/ErrorInvalidIdMalformed).
+  Na systematisch isoleren van de oorzaak vervangen door directe
+  Graph-aanroepen via HTTP Request — daarmee werkt de volledige keten.
+
+![Workflow](project5.png)
+
 
 ## Achtergrond
 
