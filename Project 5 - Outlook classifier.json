@@ -1,0 +1,338 @@
+{
+  "name": "Project 5 outlook classifier",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 5,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlookTrigger",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        -16
+      ],
+      "id": "fcec72eb-7bcb-4c91-9dce-a964be586862",
+      "name": "Microsoft Outlook Trigger",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "N3Ln0YxWhPJooGCf",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "=Van: {{ $json.from }} / Onderwerp: {{ $json.subject }} / Inhoud: {{ $json.bodyPreview }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Factuur",
+              "description": "Facturen, betalingsherinneringen, aanmaningen en betalingsbevestigingen van leveranciers of diensten"
+            },
+            {
+              "category": "Sollicitatie",
+              "description": "Vacatures, reacties op sollicitaties, berichten van recruiters en jobplatformen"
+            },
+            {
+              "category": "Trading",
+              "description": "Berichten over beurs, futures, brokers, tradingplatformen en marktinformatie"
+            },
+            {
+              "category": "Nieuwsbrief",
+              "description": "Periodieke nieuwsbrieven, marketingmails en promotionele berichten"
+            },
+            {
+              "category": "Overig",
+              "description": "Alles wat niet in een van de andere categorieën past"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -640,
+        -64
+      ],
+      "id": "a5aab71e-4ba1-4ba4-a43c-bf0d7b6723fb",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.5,
+      "position": [
+        -400,
+        176
+      ],
+      "id": "7f5d516e-a795-46b1-afc5-70f4562a26ed",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "VdlFt0KHqZCz2fzQ",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/me/messages/{{ $json.id }}/move",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOutlookOAuth2Api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "destinationId",
+              "value": "AQMkADAwATNiZmYAZC1kMmMxLTBhYjMtMDACLTAwCgAuAAADHDX4_QONSUGt2TwZO_2DsgEACdmbmoTEWUWSRDKL9S6prwAJhgTtWgAAAA=="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -256,
+        288
+      ],
+      "id": "048ea9b5-4bac-4b90-98bd-4c8bc417d97c",
+      "name": "HTTP Request",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "N3Ln0YxWhPJooGCf",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/me/messages/{{ $json.id }}/move",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOutlookOAuth2Api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "destinationId",
+              "value": "AQMkADAwATNiZmYAZC1kMmMxLTBhYjMtMDACLTAwCgAuAAADHDX4_QONSUGt2TwZO_2DsgEACdmbmoTEWUWSRDKL9S6prwAJhgTtVgAAAA=="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -256,
+        -272
+      ],
+      "id": "96e86feb-99d2-40e7-aaae-343f0351c12b",
+      "name": "HTTP Request1",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "N3Ln0YxWhPJooGCf",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/me/messages/{{ $json.id }}/move",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOutlookOAuth2Api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "destinationId",
+              "value": "AQMkADAwATNiZmYAZC1kMmMxLTBhYjMtMDACLTAwCgAuAAADHDX4_QONSUGt2TwZO_2DsgEACdmbmoTEWUWSRDKL9S6prwAJhgTtVwAAAA=="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -224,
+        -144
+      ],
+      "id": "b2c6fd6f-1be2-454c-9173-23ef74a733f0",
+      "name": "HTTP Request2",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "N3Ln0YxWhPJooGCf",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/me/messages/{{ $json.id }}/move",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOutlookOAuth2Api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "destinationId",
+              "value": "AQMkADAwATNiZmYAZC1kMmMxLTBhYjMtMDACLTAwCgAuAAADHDX4_QONSUGt2TwZO_2DsgEACdmbmoTEWUWSRDKL9S6prwAJhgTtWAAAAA=="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -224,
+        -16
+      ],
+      "id": "1e36e1ab-42f8-4a72-b076-d68154bb566a",
+      "name": "HTTP Request3",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "N3Ln0YxWhPJooGCf",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.microsoft.com/v1.0/me/messages/{{ $json.id }}/move",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOutlookOAuth2Api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "destinationId",
+              "value": "\tAQMkADAwATNiZmYAZC1kMmMxLTBhYjMtMDACLTAwCgAuAAADHDX4_QONSUGt2TwZO_2DsgEACdmbmoTEWUWSRDKL9S6prwAJhgTtWQAAAA=="
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -176,
+        128
+      ],
+      "id": "fc239878-e019-45ff-90b3-a04b96a2a5f5",
+      "name": "HTTP Request4",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "N3Ln0YxWhPJooGCf",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Microsoft Outlook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "URudj2pJdBZcQHUJ",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "14e959bb-de3a-42e1-9ec2-a6a66efbfcfb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ea699500941c4b16d9bdcf703104ae0507ab3a567a4538d39011aa4bdf42ee7"
+  },
+  "nodeGroups": [],
+  "id": "wT9Q88xHZ1YsqrFw",
+  "tags": []
+}
