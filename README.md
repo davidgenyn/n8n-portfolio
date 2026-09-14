@@ -67,6 +67,30 @@ waardoor dit de zakelijk meest bruikbare variant van project 2 is.
 
 ![Workflow](project5.png)
 
+Project 6 — Contactformulier (webhook)
+
+Doel: berichten van een website-contactformulier automatisch registreren en melden.
+
+Werking: Webhook (POST /contactformulier) ontvangt naam, e-mail en bericht als JSON → Edit Fields pakt de velden uit body en voegt een tijdstempel toe → Google Sheets (Append Row) registreert het bericht → Telegram stuurt direct een melding met de inhoud.
+
+Nodes: Webhook → Edit Fields → Google Sheets → Telegram
+
+Show Image
+
+Testen (Windows PowerShell): webhooks lokaal testen doe je met Invoke-RestMethod, niet met curl (aanhalingstekens raken verminkt):
+
+powershell
+$json = '{"naam":"Jan Test","email":"jan@test.be","bericht":"Dit is een proefbericht"}'
+Invoke-RestMethod -Uri "http://localhost:5678/webhook-test/contactformulier" -Method Post -ContentType "application/json" -Body $json
+
+Let op: in testmodus luistert de webhook per activering op precies één aanroep.
+
+Status en bekende punten:
+
+De workflow draait lokaal; publieke bereikbaarheid (koppeling met het echte formulier op de website) volgt na migratie naar een altijd-aan server.
+Het webhook-pad is voor de testfase leesbaar (contactformulier); vóór publieke ingebruikname wordt dit onraadbaar gemaakt of beveiligd.
+Afwerkpuntjes: tijdstempel staat in UTC (instantie-default), Telegram-melding toont regeleinden niet en bevat de n8n-attributieregel.
+
 
 ## Achtergrond
 
