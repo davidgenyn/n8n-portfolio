@@ -75,7 +75,7 @@ Werking: Webhook (POST /contactformulier) ontvangt naam, e-mail en bericht als J
 
 Nodes: Webhook → Edit Fields → Google Sheets → Telegram
 
-Show Image
+![Workflow](project6.png)
 
 Testen (Windows PowerShell): webhooks lokaal testen doe je met Invoke-RestMethod, niet met curl (aanhalingstekens raken verminkt):
 
