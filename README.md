@@ -91,6 +91,21 @@ De workflow draait lokaal; publieke bereikbaarheid (koppeling met het echte form
 Het webhook-pad is voor de testfase leesbaar (contactformulier); vóór publieke ingebruikname wordt dit onraadbaar gemaakt of beveiligd.
 Afwerkpuntjes: tijdstempel staat in UTC (instantie-default), Telegram-melding toont regeleinden niet en bevat de n8n-attributieregel.
 
+Project 7 — Billit/Peppol e-facturatie (sandbox)
+
+Doel: uit een binnenkomende bestelling automatisch een e-factuur aanmaken in Billit en verzenden via het Peppol-netwerk — de koppeling die sinds de Belgische B2B-e-facturatieplicht (1 jan 2026) voor elke KMO relevant is.
+
+Werking: Manual Trigger (simuleert de webshop-bestelling; in een klantopzet vervangt een webhook deze stap, zoals in project 6) → Edit Fields met de bestelgegevens → HTTP Request POST /v1/orders maakt de factuur aan in Billit (authenticatie via API-key in header + partyID) → HTTP Request POST /v1/orders/commands/send geeft de verzendopdracht, met het OrderID dynamisch uit de vorige stap → Telegram-melding.
+
+Nodes: Manual Trigger → Edit Fields → HTTP Request (aanmaken) → HTTP Request (verzenden) → Telegram
+
+![Workflow](project7.png)
+
+Aangetoond: REST-authenticatie met API-key/headers tegen een commercieel platform; factuur wordt aangemaakt en is zichtbaar in de Billit-sandbox (Income → Invoices); de Peppol-netwerkvalidatie werkt aantoonbaar (verzending naar een niet-geregistreerde ontvanger geeft correct TheCustomerIsNotActiveOnPeppol); zonder TransportType valt Billit terug op e-mailverzending.
+
+Status: effectieve verzending vereist eenmalige accountverificatie (sms); die raakte in de sandbox niet afgerond — ticket bij Billit-support loopt. Workflow draait handmatig (geen publish nodig zonder automatische trigger).
+
+Kanttekening: de API-key-route is door Billit alleen toegestaan voor eigen/niet-commercieel gebruik; een klantimplementatie vereist OAuth of het integratiepartner-traject
 
 ## Achtergrond
 
