@@ -67,7 +67,7 @@ waardoor dit de zakelijk meest bruikbare variant van project 2 is.
 
 ![Workflow](project5.png)
 
-Project 6 — Contactformulier (webhook)
+## Project 6 — Contactformulier (webhook)
 
 Doel: berichten van een website-contactformulier automatisch registreren en melden.
 
@@ -92,7 +92,7 @@ Het webhook-pad is voor de testfase leesbaar (contactformulier); vóór publieke
 Afwerkpuntjes: tijdstempel staat in UTC (instantie-default), Telegram-melding toont regeleinden niet en bevat de n8n-attributieregel.
 
 
-Project 7 — Billit/Peppol e-facturatie (sandbox)
+## Project 7 — Billit/Peppol e-facturatie (sandbox)
 
 Doel: uit een binnenkomende bestelling automatisch een e-factuur aanmaken in Billit en verzenden via het Peppol-netwerk — de koppeling die sinds de Belgische B2B-e-facturatieplicht (1 jan 2026) voor elke KMO relevant is.
 
