@@ -1,0 +1,213 @@
+{
+  "name": "Project 7 - Billit Peppol",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        -32
+      ],
+      "id": "cdbe72a2-65a0-4289-aee3-8c905c6f54bf",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ed608f76-a143-44d5-ac64-64965fcf1b68",
+              "name": "product",
+              "value": "Websiteonderhoud - maandabonnement",
+              "type": "string"
+            },
+            {
+              "id": "d19386b9-f06d-4ab0-9b58-bfd6f65820cb",
+              "name": "aantal",
+              "value": "1",
+              "type": "string"
+            },
+            {
+              "id": "2b0b2b11-2234-4eba-ae8e-d3bd834f07ee",
+              "name": "prijs_excl",
+              "value": "150",
+              "type": "string"
+            },
+            {
+              "id": "8c392785-d78c-49c4-bf31-39ec2440d78b",
+              "name": "klantId",
+              "value": "1163549",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -352,
+        -32
+      ],
+      "id": "68e235f0-4b26-4cb7-9c73-141f462ac575",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sandbox.billit.be/v1/orders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "partyID",
+              "value": "1162918"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"OrderType\": \"Invoice\",\n  \"OrderDirection\": \"Income\",\n  \"OrderNumber\": \"WEB-{{ $now.format('yyyyMMdd-HHmmss') }}\",\n  \"OrderDate\": \"{{ $now.format('yyyy-MM-dd') }}\",\n  \"ExpiryDate\": \"{{ $now.plus({ days: 30 }).format('yyyy-MM-dd') }}\",\n  \"Customer\": {\n    \"Name\": \"Testklant BV\",\n    \"PartyType\": \"Customer\",\n    \"Email\": \"david.genyn@gmail.com\"\n  },\n  \"OrderLines\": [\n    {\n      \"Quantity\": {{ $json.aantal }},\n      \"UnitPriceExcl\": {{ $json.prijs_excl }},\n      \"Description\": \"{{ $json.product }}\",\n      \"VATPercentage\": 21\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -128,
+        -32
+      ],
+      "id": "dc310cb3-0bbb-49a9-b5b3-7bebd83fdc2f",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GFIBRKFPKjxAZe0W",
+          "name": "Billit sandbox"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sandbox.billit.be/v1/orders/commands/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "partyID",
+              "value": "1162918"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"OrderIDs\": [ {{ $json }} ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        96,
+        -32
+      ],
+      "id": "6ed7128b-ca74-42c0-867a-93157d6e2a00",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GFIBRKFPKjxAZe0W",
+          "name": "Billit sandbox"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7534115158",
+        "text": "=Billit: factuur {{ $json }} aangemaakt en verzendopdracht gegeven (sandbox)",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        320,
+        -32
+      ],
+      "id": "1a08094c-15da-4756-8429-19e84340f7c5",
+      "name": "Send a text message",
+      "webhookId": "df8947a6-d306-42fd-9234-816140c5bf04",
+      "credentials": {
+        "telegramApi": {
+          "id": "bZkyNDiAijmTkWZX",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "URudj2pJdBZcQHUJ",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "8cef7230-746f-4523-a4e0-826c4127ac69",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ea699500941c4b16d9bdcf703104ae0507ab3a567a4538d39011aa4bdf42ee7"
+  },
+  "nodeGroups": [],
+  "id": "dHUFWTI833vWYAz4",
+  "tags": []
+}
