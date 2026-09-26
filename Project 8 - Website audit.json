@@ -1,0 +1,694 @@
+{
+  "name": "Project 8 - Website audit",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1008,
+        -224
+      ],
+      "id": "a21d0b2f-fdec-49ba-aca7-89836639b6ce",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1833e962-abd9-48e7-aaf5-d0d5fd3bed3e",
+              "name": "domein",
+              "value": "standaard.be",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -848,
+        -224
+      ],
+      "id": "89603206-297e-44df-a0ef-57b02796c0c9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://{{ $json.domein }}&key=HIER_JE_KEY&strategy=mobile",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -688,
+        -224
+      ],
+      "id": "ce5184d2-5aea-432c-8049-9e7fd2f292b8",
+      "name": "HTTP Request",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f022c776-ab2a-42bb-bd8b-22a39570157c",
+              "name": "score_snelheid",
+              "value": "={{ Math.round($json.lighthouseResult.categories.performance.score * 100) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -512,
+        -224
+      ],
+      "id": "6add9638-c4af-4a5c-8a3f-afed577c344e",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "url": "=https://{{ $('Edit Fields').item.json.domein }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -352,
+        -224
+      ],
+      "id": "eef2bc92-8c34-4c26-b93c-3aff1839e30b",
+      "name": "HTTP Request1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a97a0859-3f96-44d9-9f32-e99a3605f98b",
+              "name": "https_ok",
+              "value": "={{ $json.statusCode ? '✓' : '✗' }}",
+              "type": "string"
+            },
+            {
+              "id": "e537efe1-ac29-41d6-8473-7b1182fe63c4",
+              "name": "https_status",
+              "value": "={{ $json.statusCode }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -176,
+        -240
+      ],
+      "id": "7d31befb-fea7-4f97-8752-289af8aa217e",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "url": "=https://dns.google/resolve?name={{ $('Edit Fields').item.json.domein }}&type=TXT",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        -224
+      ],
+      "id": "22db82a0-c7df-4372-9ddf-496c1b075cfd",
+      "name": "HTTP Request2",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://dns.google/resolve?name=_dmarc.{{ $('Edit Fields').item.json.domein }}&type=TXT",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -1040,
+        -16
+      ],
+      "id": "0551f07e-8285-4285-be4d-dafe1ceec741",
+      "name": "HTTP Request3",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8448050e-6d3a-476f-b9cd-0344d6c9cf7f",
+              "name": "spf_ok",
+              "value": "={{ ($('HTTP Request2').item.json.Answer || []).some(a => a.data.includes('v=spf1')) ? '✓' : '✗' }}",
+              "type": "string"
+            },
+            {
+              "id": "2ed5f8b5-5549-4256-bf44-918afd9c6d95",
+              "name": "dmarc_ok",
+              "value": "={{ ($json.Answer || []).some(a => a.data.includes('v=DMARC1')) ? '✓' : '✗' }}",
+              "type": "string"
+            },
+            {
+              "id": "b6ce8888-431b-4029-8e73-304667cc57b6",
+              "name": "dmarc_beleid",
+              "value": "={{ ($json.Answer || []).map(a => a.data).join(' ').match(/p=(\\w+)/)?.[1] || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -832,
+        -16
+      ],
+      "id": "a7c6fdad-c018-4656-a66a-8dfb70a51e3c",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "url": "=https://dns.google/resolve?name=google._domainkey.{{ $('Edit Fields').item.json.domein }}&type=TXT",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -672,
+        -16
+      ],
+      "id": "a05bb7b2-8aa3-41dc-91af-dba6d7eda1be",
+      "name": "HTTP Request4",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://dns.google/resolve?name=selector1._domainkey.{{ $('Edit Fields').item.json.domein }}&type=TXT",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -512,
+        -16
+      ],
+      "id": "a3fa3551-c411-48bc-a631-da98e0b20159",
+      "name": "HTTP Request5",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://dns.google/resolve?name=default._domainkey.{{ $('Edit Fields').item.json.domein }}&type=TXT",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -336,
+        -16
+      ],
+      "id": "3a62cd1d-865f-4462-8f50-545eab67b107",
+      "name": "HTTP Request6",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e50e8fa-009b-44b7-903a-b6f76782f627",
+              "name": "dkim_ok",
+              "value": "={{ [ $('HTTP Request4').item.json, $('HTTP Request5').item.json, $json ].some(r => (r.Answer || []).some(a => a.data.includes('v=DKIM1'))) ? '✓' : '✗ (niet gevonden onder gangbare selectors)' }}",
+              "type": "string"
+            },
+            {
+              "id": "494c21b6-9ec8-4ed6-b5b2-f729a4860bbc",
+              "name": "dkim_selector",
+              "value": "={{ ['google','selector1','default'][[ $('HTTP Request4').item.json, $('HTTP Request5').item.json, $json ].findIndex(r => (r.Answer || []).some(a => a.data.includes('v=DKIM1')))] || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -144,
+        -16
+      ],
+      "id": "c530c441-3454-4948-91bb-365d48614bac",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "05363cef-469b-47c8-be66-11ddd9f47042",
+              "name": "datum",
+              "value": "={{ $now.toFormat('yyyy-MM-dd') }}",
+              "type": "string"
+            },
+            {
+              "id": "ef4acf1f-58b2-4f37-8ac4-8379758377e4",
+              "name": "domein",
+              "value": "=\t{{ $('Edit Fields').item.json.domein }}",
+              "type": "string"
+            },
+            {
+              "id": "8a60df9c-8656-4083-aae3-817c87dfe380",
+              "name": "score_snelheid",
+              "value": "={{ $('Edit Fields1').item.json.score_snelheid }}",
+              "type": "number"
+            },
+            {
+              "id": "79c04360-1e78-4fd1-83a8-d69b59562e38",
+              "name": "https_ok",
+              "value": "={{ $('Edit Fields2').item.json.https_ok }}",
+              "type": "string"
+            },
+            {
+              "id": "92bec32b-953e-4e18-a98a-b8902b75d890",
+              "name": "https_status",
+              "value": "={{ $('Edit Fields2').item.json.https_status }}",
+              "type": "number"
+            },
+            {
+              "id": "fec99d72-be18-4d54-9549-af81a485706d",
+              "name": "spf_ok",
+              "value": "={{ $('Edit Fields3').item.json.spf_ok }}",
+              "type": "string"
+            },
+            {
+              "id": "21e2eac9-d148-48b0-8e55-ff34c1434bdc",
+              "name": "dmarc_ok",
+              "value": "={{ $('Edit Fields3').item.json.dmarc_ok }}",
+              "type": "string"
+            },
+            {
+              "id": "457497c5-f854-4051-af1f-7b4aacdc137c",
+              "name": "dmarc_beleid",
+              "value": "={{ $('Edit Fields3').item.json.dmarc_beleid }}",
+              "type": "string"
+            },
+            {
+              "id": "e8a0fa25-44e0-44f3-b60b-d2f0d824ccbd",
+              "name": "dkim_ok",
+              "value": "={{ $json.dkim_ok }}",
+              "type": "string"
+            },
+            {
+              "id": "4bab3e23-e412-440f-97f2-5f878de84fbe",
+              "name": "dkim_selector",
+              "value": "={{ $json.dkim_selector }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        16,
+        -16
+      ],
+      "id": "2997c4a4-9d4c-4e2d-b607-fa8be357adc1",
+      "name": "Verslag"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "12MXyVGkOlyS6KY-wBPXwTZZMersWnViai8YZUauyYeE",
+          "mode": "list",
+          "cachedResultName": "Website audits",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12MXyVGkOlyS6KY-wBPXwTZZMersWnViai8YZUauyYeE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "audits",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12MXyVGkOlyS6KY-wBPXwTZZMersWnViai8YZUauyYeE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "datum",
+              "displayName": "datum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "domein",
+              "displayName": "domein",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score_snelheid",
+              "displayName": "score_snelheid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "https_ok",
+              "displayName": "https_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "https_status",
+              "displayName": "https_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "spf_ok",
+              "displayName": "spf_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dmarc_ok",
+              "displayName": "dmarc_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dmarc_beleid",
+              "displayName": "dmarc_beleid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dkim_ok",
+              "displayName": "dkim_ok",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dkim_selector",
+              "displayName": "dkim_selector",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        176,
+        -16
+      ],
+      "id": "9018a7ec-5686-4fa7-beed-7a09ffa224ba",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XN6CNnVo3DN0vtu1",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7534115158",
+        "text": "=🔍 Website-audit: {{ $json.domein }} ({{ $json.datum }})\nSnelheid mobiel: {{ $json.score_snelheid }}/100\nHTTPS: {{ $json.https_ok }} ({{ $json.https_status }})\nSPF: {{ $json.spf_ok }}\nDMARC: {{ $json.dmarc_ok }} ({{ $json.dmarc_beleid }})\nDKIM: {{ $json.dkim_ok }} {{ $json.dkim_selector }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "73f1f6f0-9634-43b7-9269-a21fee4aa8de",
+      "name": "Send a text message",
+      "webhookId": "1eb7a0ea-b198-4a28-aa10-8b6179e7622f",
+      "credentials": {
+        "telegramApi": {
+          "id": "bZkyNDiAijmTkWZX",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request5": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request6": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Verslag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verslag": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "URudj2pJdBZcQHUJ",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "53cd3620-d736-4e82-839f-1e71bec79bb5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5ea699500941c4b16d9bdcf703104ae0507ab3a567a4538d39011aa4bdf42ee7"
+  },
+  "nodeGroups": [],
+  "id": "Fku57Uzx7USEUkfT",
+  "tags": []
+}
