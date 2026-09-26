@@ -108,6 +108,29 @@ Status: effectieve verzending vereist eenmalige accountverificatie (sms); die ra
 
 Kanttekening: de API-key-route is door Billit alleen toegestaan voor eigen/niet-commercieel gebruik; een klantimplementatie vereist OAuth of het integratiepartner-traject
 
+## Project 8 – Website audit
+
+**Wat het doet:** één domein ingeven → de workflow controleert automatisch snelheid, HTTPS en e-mailbeveiliging (SPF, DMARC, DKIM) → resultaten in een Google Sheet en een samenvatting op Telegram. Bedoeld als motor achter een "gratis website-audit" voor KMO's.
+
+**Flow:** Manual Trigger → Edit Fields (domein) → HTTP Request (Google PageSpeed API) → Edit Fields (snelheidsscore) → HTTP Request (https://domein) → Edit Fields (https ✓/✗ + statuscode) → 2× HTTP Request (Google DNS: TXT-records domein + _dmarc) → Edit Fields (SPF, DMARC, beleid) → 3× HTTP Request (Google DNS: DKIM-selectors google, selector1, default) → Edit Fields (DKIM ✓/✗ + selector) → Edit Fields "Verslag" (alle resultaten in één rij) → Google Sheets (Append Row) → Telegram
+
+**Technieken:**
+- Meerdere externe bronnen in één workflow samenbrengen (PageSpeed API, Google DNS-over-HTTPS, eigen HTTP-check) en er één verslag van maken
+- API-key als query-parameter (PageSpeed) in plaats van in een header; key beperkt tot één API in Google Cloud
+- Foutafhandeling per node: "On Error: Continue" en "Never Error" zodat een 403, 404 of onbestaand domein een auditresultaat wordt in plaats van een crash
+- Verwijzingen naar eerdere nodes met `$('Nodenaam').item.json` om resultaten uit de hele keten te verzamelen
+- JavaScript-expressies voor de checks, bv. `Answer.some(a => a.data.includes('v=spf1'))`
+
+**Voorbeeldresultaat (standaard.be):** snelheid mobiel 34/100 · HTTPS ✓ (403, Cloudflare-botbescherming) · SPF ✓ · DMARC ✓ (p=reject) · DKIM ✓ (selector1)
+
+**Gekende beperkingen:**
+- HTTPS-check kijkt of de server over https antwoordt, ongeacht de statuscode; een 403 door botbescherming telt als ✓
+- DKIM wordt alleen gezocht onder de selectors `google`, `selector1` en `default`; andere selectors geven "niet gevonden onder gangbare selectors"
+- PageSpeed-scores schommelen per meting (28–42 bij dezelfde site)
+- In de JSON is de PageSpeed-key vervangen door `HIER_JE_KEY`
+
+![Project 8](project8.png)
+
 ## Achtergrond
 
 
