@@ -74,7 +74,7 @@ naam van de workflow, de node en de foutmelding.
 - Self-hosted n8n (Docker)
 - Credentials: Google (Gmail, Sheets), Anthropic API, Telegram Bot —
   credentials zitten **niet** in de workflow-JSON
-![Workflow](project.png)
+![Workflow](project3.png)
 
 
 ## Project 4 — Valutamonitor
