@@ -3,6 +3,36 @@
   "nodes": [
     {
       "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -656,
+        16
+      ],
+      "id": "2096c3ef-9643-4399-98a4-5b2ddadbc5bd",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "WMXuzHDZQLqf5xBh",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
         "operation": "pdf",
         "binaryPropertyName": "attachment_0",
         "options": {}
@@ -10,10 +40,10 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        -48,
-        16
+        -224,
+        0
       ],
-      "id": "a0ccfdd1-50c3-4ad4-8376-3fb55a6c44cd",
+      "id": "c1124105-72b6-4356-b4fe-61c7a092dfc2",
       "name": "Extract from File"
     },
     {
@@ -22,39 +52,43 @@
         "attributes": {
           "attributes": [
             {
-              "name": "is_factuur",
-              "type": "boolean",
-              "description": "true als dit document een factuur of betalingsbewijs is, anders false"
-            },
-            {
               "name": "datum",
-              "description": "Factuurdatum in formaat YYYY-MM-DD"
+              "description": "Neem de documentdatum of factuurdatum, in formaat DD/MM/JJJJ."
             },
             {
               "name": "leverancier",
-              "description": "Het factuur- of ordernummer"
+              "description": "De naam van het bedrijf dat de factuur verstuurt, niet de klant."
             },
             {
               "name": "factuurnummer",
-              "description": "Het factuur- of ordernummer"
+              "description": "Het document- of factuurnummer, alleen het nummer zelf."
             },
             {
               "name": "totaal",
               "type": "number",
-              "description": "\tTotaalbedrag inclusief btw, alleen het getal, punt als decimaalteken"
+              "description": "Het totaalbedrag van de factuur, alleen het getal met decimale punt, zonder valutateken."
             },
             {
               "name": "btw",
               "type": "number",
-              "description": "Btw-bedrag, alleen het getal; 0 als niet vermeld"
+              "description": "Het btw-bedrag in euro, alleen het getal met decimale punt. Laat leeg indien niet vermeld."
             },
             {
               "name": "valuta",
-              "description": "Valutacode zoals EUR of USD"
+              "description": "De muntcode van de bedragen, bv. EUR."
             },
             {
               "name": "onderwerp",
-              "description": "Korte omschrijving van wat er gefactureerd wordt"
+              "description": "Korte omschrijving van waar de factuur over gaat, bv. maandelijks voorschot elektriciteit, maximaal enkele woorden."
+            },
+            {
+              "name": "vervaldatum",
+              "description": "De uiterste betaaldatum of vervaldatum, in formaat DD/MM/JJJJ. Laat leeg indien niet vermeld."
+            },
+            {
+              "name": "totaal_excl",
+              "type": "number",
+              "description": "Het totaalbedrag exclusief btw, als getal met decimale punt, zonder valutateken"
             }
           ]
         },
@@ -63,10 +97,10 @@
       "type": "@n8n/n8n-nodes-langchain.informationExtractor",
       "typeVersion": 1.2,
       "position": [
-        192,
-        16
+        -48,
+        0
       ],
-      "id": "30f5a603-4b45-425e-b160-c2081095d8d4",
+      "id": "a321b069-22af-40ea-8d4c-b071932d88f9",
       "name": "Information Extractor"
     },
     {
@@ -80,83 +114,54 @@
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
-      "typeVersion": 1.5,
+      "typeVersion": 1.6,
       "position": [
-        192,
-        208
+        -48,
+        192
       ],
-      "id": "49ebe691-c162-4030-97db-93270670873c",
+      "id": "88d83dab-7fac-4e47-8275-c58fe3cb7839",
       "name": "Anthropic Chat Model",
       "credentials": {
         "anthropicApi": {
-          "id": "VdlFt0KHqZCz2fzQ",
+          "id": "iQkBEyweExtSz2Hd",
           "name": "Anthropic account"
         }
       }
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "4a345fb0-67e2-40e6-bf89-949ac6fdb151",
-              "leftValue": "={{ $json.output.is_factuur }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        560,
-        16
-      ],
-      "id": "6ac30828-c72f-4a8a-bb91-78e5c9850ea5",
-      "name": "If"
-    },
-    {
-      "parameters": {
-        "operation": "append",
+        "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "1NwKhoA4CNvf4HW1n6rzOiKBMVSkszlQfDMynNAd1uFk",
+          "value": "1mhHBqFxxe0B1DSzr2zYfCtuWBe5P9cTzviKkfTfe1v4",
           "mode": "list",
           "cachedResultName": "Facturen",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NwKhoA4CNvf4HW1n6rzOiKBMVSkszlQfDMynNAd1uFk/edit?usp=drivesdk"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mhHBqFxxe0B1DSzr2zYfCtuWBe5P9cTzviKkfTfe1v4/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Blad1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1NwKhoA4CNvf4HW1n6rzOiKBMVSkszlQfDMynNAd1uFk/edit#gid=0"
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mhHBqFxxe0B1DSzr2zYfCtuWBe5P9cTzviKkfTfe1v4/edit#gid=0"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "datum": "={{ $json.output.datum }}",
+            "datum": "=\t{{ $json.output.datum }}",
             "leverancier": "={{ $json.output.leverancier }}",
             "factuurnummer": "={{ $json.output.factuurnummer }}",
-            " totaal": "={{ $json.output.totaal }}",
+            "totaal": "={{ $json.output.totaal }}",
             "btw": "={{ $json.output.btw }}",
             "valuta": "={{ $json.output.valuta }}",
-            "onderwerp": "={{ $json.output.onderwerp }}"
+            "onderwerp": "={{ $json.output.onderwerp }}",
+            "vervaldatum": "={{ $json.output.vervaldatum }}",
+            "totaal_excl": "={{ $json.output.totaal_excl }}",
+            "status": "OK"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+            "factuurnummer"
+          ],
           "schema": [
             {
               "id": "datum",
@@ -183,11 +188,12 @@
               "defaultMatch": false,
               "display": true,
               "type": "string",
-              "canBeUsedToMatch": true
+              "canBeUsedToMatch": true,
+              "removed": false
             },
             {
-              "id": " totaal",
-              "displayName": " totaal",
+              "id": "totaal",
+              "displayName": "totaal",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -220,6 +226,33 @@
               "display": true,
               "type": "string",
               "canBeUsedToMatch": true
+            },
+            {
+              "id": "vervaldatum",
+              "displayName": "vervaldatum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totaal_excl",
+              "displayName": "totaal_excl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
           ],
           "attemptToConvertTypes": false,
@@ -230,55 +263,270 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        784,
-        -80
+        496,
+        -96
       ],
-      "id": "347ffd31-1b2a-41e4-a839-c24fd6358144",
-      "name": "Append row in sheet",
+      "id": "5251b879-5481-4d31-bdd8-899c03ab12d7",
+      "name": "Append or update row in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "XN6CNnVo3DN0vtu1",
+          "id": "7yHnSa6AgK2OwRFb",
           "name": "Google Sheets account"
         }
       }
     },
     {
       "parameters": {
-        "pollTimes": {
-          "item": [
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
             {
-              "mode": "everyX",
-              "value": 5,
-              "unit": "minutes"
+              "id": "d14d666e-5c37-4fe8-bd03-79ffc7fde395",
+              "leftValue": "={{ Math.abs($json.output.totaal_excl + $json.output.btw - $json.output.totaal) }}",
+              "rightValue": 0.02,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         },
-        "simple": false,
-        "filters": {
-          "q": "has:attachment filename:pdf"
-        },
-        "options": {
-          "downloadAttachments": true
-        }
+        "options": {}
       },
-      "type": "n8n-nodes-base.gmailTrigger",
-      "typeVersion": 1.4,
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
       "position": [
-        -288,
-        16
+        272,
+        0
       ],
-      "id": "d4462f45-9d0a-4348-a272-1c081ab684c7",
-      "name": "Gmail Trigger",
+      "id": "799ef1d7-5769-49e6-80b7-1325703f75b3",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1mhHBqFxxe0B1DSzr2zYfCtuWBe5P9cTzviKkfTfe1v4",
+          "mode": "list",
+          "cachedResultName": "Facturen",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mhHBqFxxe0B1DSzr2zYfCtuWBe5P9cTzviKkfTfe1v4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mhHBqFxxe0B1DSzr2zYfCtuWBe5P9cTzviKkfTfe1v4/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "CONTROLEREN",
+            "datum": "={{ $json.output.datum }}",
+            "leverancier": "={{ $json.output.leverancier }}",
+            "factuurnummer": "={{ $json.output.factuurnummer }}",
+            "totaal": "={{ $json.output.totaal }}",
+            "btw": "={{ $json.output.btw }}",
+            "valuta": "={{ $json.output.valuta }}",
+            "onderwerp": "={{ $json.output.onderwerp }}",
+            "vervaldatum": "={{ $json.output.vervaldatum }}",
+            "totaal_excl": "={{ $json.output.totaal_excl }}"
+          },
+          "matchingColumns": [
+            "factuurnummer"
+          ],
+          "schema": [
+            {
+              "id": "datum",
+              "displayName": "datum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "leverancier",
+              "displayName": "leverancier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "factuurnummer",
+              "displayName": "factuurnummer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "totaal",
+              "displayName": "totaal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "btw",
+              "displayName": "btw",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "valuta",
+              "displayName": "valuta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "onderwerp",
+              "displayName": "onderwerp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "vervaldatum",
+              "displayName": "vervaldatum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totaal_excl",
+              "displayName": "totaal_excl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        512,
+        112
+      ],
+      "id": "2d0f17cb-d378-4752-a32a-4651bf7c5759",
+      "name": "Append or update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7yHnSa6AgK2OwRFb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "lotusflow.contact@gmail.com",
+        "subject": "=Factuur {{ $json.factuurnummer }} - som klopt niet - CONTROLEREN",
+        "emailType": "text",
+        "message": "=De somcontrole van deze factuur is mislukt.  Leverancier: {{ $json.leverancier }} Factuurnummer: {{ $json.factuurnummer }} Factuurdatum: {{ $json.datum }}  Totaal excl. btw: {{ $json.totaal_excl }} Btw: {{ $json.btw }} Som: {{ $json.totaal_excl + $json.btw }} Totaal volgens factuur: {{ $json.totaal }} Afwijking: {{ Math.abs($json.totaal_excl + $json.btw - $json.totaal) }}  De rij staat in de Facturen-sheet met status CONTROLEREN.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        112
+      ],
+      "id": "0d90b639-e537-46be-b700-136a2483c2c3",
+      "name": "Send a message",
+      "webhookId": "5dd6890f-917b-4b10-a153-b5aaf3891cbb",
       "credentials": {
         "gmailOAuth2": {
-          "id": "uuAT82uIQidWsNUn",
+          "id": "WMXuzHDZQLqf5xBh",
           "name": "Gmail account"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9a815823-d433-4d89-b96c-547bc281b484",
+              "leftValue": "={{ $binary.attachment_0 !== undefined }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -480,
+        16
+      ],
+      "id": "8609f0c7-22dd-4065-abab-5c8d8f8efdf3",
+      "name": "If1"
     }
   ],
   "pinData": {},
   "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Extract from File": {
       "main": [
         [
@@ -316,14 +564,32 @@
       "main": [
         [
           {
-            "node": "Append row in sheet",
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append or update row in sheet1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Gmail Trigger": {
+    "Append or update row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
       "main": [
         [
           {
@@ -331,21 +597,27 @@
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "q2RIfG0I8uPefK3a",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 5
   },
-  "versionId": "f0c1ba3a-b0e5-406b-a7d9-81beaea8b86d",
+  "versionId": "269c5f3e-5bf3-4c79-a5a1-ff6ac1bfe72a",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "5ea699500941c4b16d9bdcf703104ae0507ab3a567a4538d39011aa4bdf42ee7"
+    "instanceId": "b905c810d91b354b915544be0ce6c0942dde769c735c3326565f86b320468544"
   },
   "nodeGroups": [],
-  "id": "vbuY4O3hKcmrkLUY",
+  "id": "tgcSZdZtqUAbfW5y",
   "tags": []
 }
