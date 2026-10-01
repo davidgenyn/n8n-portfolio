@@ -23,18 +23,57 @@ Trading, Nieuwsbrief, Overig) en zet het bijhorende Gmail-label.
 - Categoriebeschrijvingen fungeren als prompt; bijgestuurd op basis van echte mailstroom
   ![Workflow](project2.png)
 
-## Project 3 — Factuur-extractor
-Leest PDF-facturen uit inkomende mail, extraheert gestructureerde velden met AI en 
-schrijft ze als rij naar een Google Sheet.
+# Project 3 – Factuur-extractor
 
-- Gmail Trigger (filter: PDF-bijlagen) → Extract from File (PDF→tekst) → 
-  Information Extractor (8 attributen, getypeerd: Boolean/Number/String) → 
-  IF (is_factuur) → Sheets Append/Update Row
-- Herkent datumformaten en valuta (EUR/USD) correct
+Automatische verwerking van factuur-PDF's uit e-mail naar een overzichtelijke
+Google Sheet, met ingebouwde rekencontrole en alarmering.
 
-**Known limitations (bewust genoteerd):**
-- Eén PDF-bijlage per mail wordt verwerkt (attachment_0)
--
+## Wat doet deze workflow?
+
+1. **Gmail Trigger** – controleert elke minuut de mailbox op nieuwe berichten.
+2. **Bijlagecheck (IF)** – mails zonder PDF-bijlage (nieuwsbrieven, vragen)
+   worden genegeerd in plaats van fouten te veroorzaken.
+3. **Extract from File** – haalt de tekst uit de PDF-bijlage.
+4. **Information Extractor + Claude (Anthropic)** – leest 9 velden uit de
+   factuur: datum, leverancier, factuurnummer, totaal, btw, totaal excl. btw,
+   valuta, onderwerp en vervaldatum.
+5. **Somcontrole (IF)** – rekent zelf na of totaal excl. + btw gelijk is aan
+   het totaalbedrag (tolerantie 0.02 voor afrondingsverschillen). De AI wordt
+   dus niet blind vertrouwd: de wiskunde controleert de AI.
+6. **Google Sheets** – elke factuur komt als rij in de sheet, met status:
+   - **OK** – de bedragen kloppen rekenkundig;
+   - **CONTROLEREN** – de som wijkt af; de uitgelezen bedragen worden tóch
+     weggeschreven zodat ze naast de originele PDF gelegd kunnen worden.
+7. **Alarmmail** – bij een afwijking vertrekt automatisch een e-mail met
+   leverancier, factuurnummer, de bedragen en de exacte afwijking.
+
+Dubbele verwerking is uitgesloten: de sheet matcht op factuurnummer, dus een
+factuur die twee keer binnenkomt wordt bijgewerkt, niet toegevoegd.
+
+## Foutbewaking
+
+Alle workflows zijn gekoppeld aan een centrale error-workflow
+(Error Trigger → Telegram). Bij een technische fout (API onbereikbaar,
+credential verlopen, …) komt er direct een Telegram-bericht binnen met de
+naam van de workflow, de node en de foutmelding.
+
+## Gebruikte nodes
+
+| Node | Rol |
+|------|-----|
+| Gmail Trigger | Mailbox bewaken, bijlagen downloaden |
+| If | Bijlagecheck en somcontrole |
+| Extract from File | PDF naar tekst |
+| Information Extractor + Anthropic Chat Model | AI-extractie van 9 velden |
+| Google Sheets (Append or update row) | Opslag met duplicaatbescherming |
+| Gmail (Send) | Alarmmail bij afwijking |
+| Error Trigger + Telegram | Centrale foutbewaking |
+
+## Opzet
+
+- Self-hosted n8n (Docker)
+- Credentials: Google (Gmail, Sheets), Anthropic API, Telegram Bot —
+  credentials zitten **niet** in de workflow-JSON
 ![Workflow](project3.png)
 
 
