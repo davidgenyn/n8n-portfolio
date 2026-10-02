@@ -1,0 +1,254 @@
+{
+  "name": "Project 4 - Energieprijzen",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://api.smartprice.be/api/prices/today",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -640,
+        -208
+      ],
+      "id": "02c21175-7ab6-4b0f-a1de-dd14af427aa2",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -208
+      ],
+      "id": "6b673d1a-2e72-4447-82c7-690508acd148",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "af5d6eb9-5745-4479-8c2c-dd0ec1b6e27f",
+              "leftValue": "={{ $json.day }}",
+              "rightValue": "tomorrow",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -320,
+        -208
+      ],
+      "id": "03acf864-db66-4b9e-b35f-a2899ab0c215",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "price_eur_kwh"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        0
+      ],
+      "id": "ac35d0e7-2057-4bad-8423-ad87e6dec5d6",
+      "name": "Sort"
+    },
+    {
+      "parameters": {
+        "maxItems": 3
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        0
+      ],
+      "id": "c9d6623b-5431-4e8f-a699-ac856d3c234f",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        0
+      ],
+      "id": "e27bd4ef-9724-4fc5-886c-7eb03355a10e",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "fromEmail": "info@weblotus.be",
+        "toEmail": "jouw@adres.be",
+        "subject": "Stroomprijzen morgen — goedkoopste kwartieren",
+        "emailFormat": "text",
+        "text": "=Goedkoopste kwartieren morgen:\n\n1. {{ DateTime.fromISO($json.data[0].timestamp).setZone('Europe/Brussels').toFormat('HH:mm') }} — {{ $json.data[0].price_eur_kwh.toFixed(3).replace('.', ',') }} €/kWh\n2. {{ DateTime.fromISO($json.data[1].timestamp).setZone('Europe/Brussels').toFormat('HH:mm') }} — {{ $json.data[1].price_eur_kwh.toFixed(3).replace('.', ',') }} €/kWh\n3. {{ DateTime.fromISO($json.data[2].timestamp).setZone('Europe/Brussels').toFormat('HH:mm') }} — {{ $json.data[2].price_eur_kwh.toFixed(3).replace('.', ',') }} €/kWh\n\nBron: SmartPrice.be (Energy-Charts)",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "4a8ccee5-b918-473e-9eac-ce6a8d960e39",
+      "name": "Send an Email",
+      "webhookId": "3800f578-48a5-49ec-abc5-7d6e96c1b6f9",
+      "credentials": {
+        "smtp": {
+          "id": "nnfhL3VXm4pbdZyV",
+          "name": "SMTP inf@weblotus.be"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -816,
+        -208
+      ],
+      "id": "62411d19-7452-422c-85c8-114e99e9988e",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Sort",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "q2RIfG0I8uPefK3a",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "5d20b0d5-f695-4415-8edb-d60243fa4f22",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b905c810d91b354b915544be0ce6c0942dde769c735c3326565f86b320468544"
+  },
+  "nodeGroups": [],
+  "id": "s6JbEzdA5CwwNcQT",
+  "tags": []
+}
