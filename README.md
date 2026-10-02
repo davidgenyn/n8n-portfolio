@@ -77,16 +77,64 @@ naam van de workflow, de node en de foutmelding.
 ![Workflow](project3.png)
 
 
-## Project 4 — Valutamonitor
-Haalt dagelijks de eurokoersen op bij de Europese Centrale Bank (XML),
-vraagt per valuta via GraphQL op welke landen die munt gebruiken,
-en schrijft het resultaat als historiek naar een Google Sheet.
+# Project 4 — Energieprijzen België (dagelijkse mail)
 
-- Schedule Trigger (dagelijks 17:00) → HTTP Request (ECB XML) →
-  XML→JSON → Edit Fields → Split Out → GraphQL (Countries API) →
-  Sheets Append/Update Row
-- Dubbel-detectie via samengestelde sleutel (datum + valuta)
-- Twee externe dataformaten (XML en GraphQL) samengevoegd in één rapport
+Haalt elke avond de Belgische day-ahead stroomprijzen op en mailt
+de drie goedkoopste kwartieren van morgen. Wie een dynamisch
+energiecontract heeft, kan verbruik (laadpaal, boiler, machines)
+naar die uren verschuiven.
+
+## Wat de workflow doet
+
+1. **Schedule Trigger** — dagelijks om 21:00 (de prijzen van morgen
+   staan 's avonds in de API, zie Bijzonderheden)
+2. **HTTP Request** — haalt de kwartierprijzen op bij SmartPrice.be
+   (gratis, geen API-sleutel)
+3. **Split Out** — splitst de lijst in losse items, één per kwartier
+4. **Filter** — houdt alleen de kwartieren van morgen over (day = tomorrow)
+5. **Sort** — sorteert op prijs (€/kWh), goedkoopste eerst
+6. **Limit** — houdt de top 3 over
+7. **Aggregate** — voegt de drie kwartieren samen tot één item,
+   zodat er één mail vertrekt in plaats van drie
+8. **Send Email** — mailt het overzicht via SMTP (eigen domein)
+
+## Voorbeeld van de mail
+
+    Goedkoopste kwartieren morgen:
+
+    1. 13:45 — 0,132 €/kWh
+    2. 13:30 — 0,136 €/kWh
+    3. 14:15 — 0,138 €/kWh
+
+    Bron: SmartPrice.be (Energy-Charts)
+
+## Bijzonderheden
+
+- **Kwartierprijzen**: de Belgische day-ahead markt werkt in
+  kwartieren — 96 prijzen per dag, geen 24.
+- **Tijdzone**: de API levert tijdstippen in UTC. De expression in
+  de mailnode rekent om naar Belgische tijd met
+  `DateTime.fromISO(...).setZone('Europe/Brussels')`, inclusief
+  zomer/wintertijd.
+- **Timing van de data**: overdag bevat de API alleen de prijzen
+  van vandaag; die van morgen verschijnen pas 's avonds, na de
+  day-ahead veiling. Daarom draait de workflow om 21:00. Een run
+  vóór publicatie levert 0 items na de Filter op — de workflow
+  stopt dan vanzelf, zonder foute mail.
+- **Foutbewaking**: gekoppeld aan de centrale Error Workflow
+  (Telegram-melding bij een mislukte run).
+
+## Vereisten
+
+- n8n (self-hosted)
+- SMTP-credential van een eigen mailbox (hier: Vimexx, poort 465,
+  SSL/TLS, gebruikersnaam = volledig e-mailadres)
+- Vervang in de workflow het ontvangstadres door je eigen adres
+
+## Databron
+
+Prijsdata van [SmartPrice.be](https://smartprice.be), onderliggend
+afkomstig van Energy-Charts (Fraunhofer ISE) — licentie CC BY 4.0.
 
 ![Workflow](project4.png)
 
