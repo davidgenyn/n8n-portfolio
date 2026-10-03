@@ -165,29 +165,59 @@ Belgische kmo's op Microsoft 365 werken, niet op Google Workspace.
 ![Workflow](project5a.png)
 
 
-## Project 6 — Contactformulier (webhook)
+## Project 6a — AI-agent Contactformulier
 
-Doel: berichten van een website-contactformulier automatisch registreren en melden.
+Het contactformulier van weblotus.be, volledig geautomatiseerd: een AI-agent
+leest elke aanvraag, schrijft een persoonlijke bevestigingsmail met gerichte
+vervolgvragen, en alles wordt geregistreerd en gemeld. Draait live achter de site.
 
-Werking: Webhook (POST /contactformulier) ontvangt naam, e-mail en bericht als JSON → Edit Fields pakt de velden uit body en voegt een tijdstempel toe → Google Sheets (Append Row) registreert het bericht → Telegram stuurt direct een melding met de inhoud.
+### Wat de workflow doet
 
-Nodes: Webhook → Edit Fields → Google Sheets → Telegram
+1. **Webhook** — ontvangt de formuliergegevens als JSON (POST), met CORS
+   beperkt tot https://weblotus.be
+2. **Edit Fields** — pakt de velden uit en voegt een tijdstempel toe
+3. **AI Agent (Claude Sonnet 4.5)** — schrijft op basis van het type aanvraag
+   (website, automatisering, e-marketing) een bevestigingsmail in de je-vorm
+   met genummerde vervolgvragen, en levert uitsluitend JSON af: onderwerp,
+   mailtekst, samenvatting en urgentie (laag/normaal/hoog)
+4. **Parse agent (Code)** — parset de AI-output defensief: markdown-codeblokken
+   worden gestript, en bij ongeldige output vertrekt een vaste fallback-mail
+   zodat de aanvrager altijd antwoord krijgt
+5. **Google Sheets** — elke aanvraag als rij in de intake-sheet
+6. **Send Email (SMTP)** — bevestigingsmail naar de aanvrager, met BCC naar
+   de eigen mailbox en Reply-To op het eigen adres
+7. **Telegram** — directe melding met type, urgentie, samenvatting en de
+   verzonden mail
 
-![Workflow](project6.png)
+### AI betrouwbaar maken
 
-Testen (Windows PowerShell): webhooks lokaal testen doe je met Invoke-RestMethod, niet met curl (aanhalingstekens raken verminkt):
+Een taalmodel genereert alle tekst telkens opnieuw — ook de zinnen die altijd
+identiek moeten zijn. In de praktijk gaf dat af en toe een typfout in de
+ondertekening of een dubbele afsluiter. De oplossing zit in de architectuur,
+niet in de prompt:
 
-powershell
-$json = '{"naam":"Jan Test","email":"jan@test.be","bericht":"Dit is een proefbericht"}'
-Invoke-RestMethod -Uri "http://localhost:5678/webhook-test/contactformulier" -Method Post -ContentType "application/json" -Body $json
+- de AI schrijft alleen wat per klant verschilt (bedanking, samenvatting,
+  vervolgvragen)
+- de vaste afsluiter, groet en ondertekening staan hard in de Code-node en
+  worden na het parsen aangeplakt — daar kan geen typfout in sluipen
+- schrijft het model tóch een eigen afsluiter, dan knipt de code die eerst
+  weg: een dubbele afsluiter is technisch onmogelijk
 
-Let op: in testmodus luistert de webhook per activering op precies één aanroep.
+### Publieke bereikbaarheid
 
-Status en bekende punten:
+De n8n-server staat achter een thuisrouter. Tailscale Funnel stelt uitsluitend
+het pad /webhook publiek beschikbaar over HTTPS; de editor en de credentials
+blijven onbereikbaar van buitenaf. Het formulier op de site post rechtstreeks
+naar die URL.
 
-De workflow draait lokaal; publieke bereikbaarheid (koppeling met het echte formulier op de website) volgt na migratie naar een altijd-aan server.
-Het webhook-pad is voor de testfase leesbaar (contactformulier); vóór publieke ingebruikname wordt dit onraadbaar gemaakt of beveiligd.
-Afwerkpuntjes: tijdstempel staat in UTC (instantie-default), Telegram-melding toont regeleinden niet en bevat de n8n-attributieregel.
+### Testen
+
+Vanaf Windows test je de publieke webhook het betrouwbaarst vanuit CMD
+(PowerShell verhaspelt de aanhalingstekens):
+
+    curl -X POST https://<funnel-url>/webhook/<pad> -H "Content-Type: application/json" -d "{\"naam\":\"Jan Test\",\"email\":\"jan@voorbeeld.be\",\"bericht\":\"test\"}"
+
+![Workflow](project6a.png)
 
 
 ## Project 7 — Billit/Peppol e-facturatie (sandbox)
