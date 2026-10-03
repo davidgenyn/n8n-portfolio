@@ -1,0 +1,409 @@
+{
+  "name": "Project 6a - AI-agent Contactformulier",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "88812cc3-22ab-4f94-89fa-996efddad2ba",
+        "options": {
+          "allowedOrigins": "https://weblotus.be"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -912,
+        0
+      ],
+      "id": "b3d88fb6-fa8b-4788-a612-679a7df1ae7b",
+      "name": "Webhook",
+      "webhookId": "88812cc3-22ab-4f94-89fa-996efddad2ba"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6ccd9c95-d425-496e-988c-7e7fa7622b75",
+              "name": "naam",
+              "value": "={{ $json.body.naam }}",
+              "type": "string"
+            },
+            {
+              "id": "67c871db-861f-4ad9-b2d4-0d670d13d578",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "5f06e711-b3c6-4fd7-a939-0c4b9235711a",
+              "name": "bericht",
+              "value": "={{ $json.body.bericht }}",
+              "type": "string"
+            },
+            {
+              "id": "01076a5d-3a28-4c12-b343-1e5167cef4a6",
+              "name": "bedrijf",
+              "value": "={{ $json.body.bedrijf }}",
+              "type": "string"
+            },
+            {
+              "id": "7197fb58-e6ef-4b3b-9f4d-a6f85f241938",
+              "name": "telefoon",
+              "value": "={{ $json.body.telefoon }}",
+              "type": "string"
+            },
+            {
+              "id": "cd44be01-4a0e-47e1-8758-cb9664e18bb8",
+              "name": "type",
+              "value": "={{ $json.body.type }}",
+              "type": "string"
+            },
+            {
+              "id": "8fa84fcc-5df7-4662-bd69-f4f489a7fb7f",
+              "name": "ontvangen",
+              "value": "={{ $now.format('dd-MM-yyyy HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -720,
+        0
+      ],
+      "id": "47e6ff79-261c-417b-9492-501eff6b109c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Nieuwe aanvraag via het contactformulier van weblotus.be\n\nNaam: {{ $json.naam }}\nE-mail: {{ $json.email }}\nBedrijf: {{ $json.bedrijf }}\nTelefoon: {{ $json.telefoon }}\nType aanvraag: {{ $json.type }}\nBericht:\n{{ $json.bericht }}",
+        "options": {
+          "systemMessage": "Je bent de intake-assistent van Weblotus (weblotus.be), het bedrijf van David Genyn: webdesign en AI-automatisering voor kleine ondernemingen in Vlaanderen.\n\nJe krijgt een aanvraag uit het contactformulier. Je taak:\n1. Schrijf een korte, persoonlijke bevestigingsmail aan de aanvrager, in het Nederlands, warm maar zakelijk. Gebruik consequent de je-vorm (je, jij, jouw) en nooit u of uw. Geen opsommingstekens, geen vette tekst, geen emoji. Maximaal 150 woorden.\nSpreek de aanvrager aan met \"Beste\" gevolgd door alleen de voornaam uit het formulier (bv. \"Beste Jan,\"). Vulde de aanvrager maar één woord in, gebruik dan dat woord. Gebruik nooit \"meneer\" of \"mevrouw\".\n2. Bedank voor de aanvraag, vat in één zin samen wat je begrepen hebt, en stel 2 of 3 gerichte vervolgvragen op basis van het type aanvraag:\n   - website: bestaat er al een site; welke pagina's zijn nodig; is er al een logo/huisstijl.\n   - automatisering: welke taak kost nu de meeste tijd; welke tools zitten erin (mail, boekhouding, agenda…); hoe vaak komt die taak voor.\n   - e-marketing: welk kanaal (nieuwsbrief, sociale media, advertenties); is er al een contactenlijst; wat is het doel.\n   Sla vragen over die de aanvrager in het bericht al beantwoord heeft.\n      Zet de vervolgvragen ALTIJD als genummerde lijst in de mailtekst: elke vraag op een eigen regel die begint met 1. of 2. of 3. Zet NOOIT meerdere vragen samen in één alinea.\n3. De mailtekst eindigt direct na de laatste vervolgvraag. Schrijf GEEN afsluitzin, GEEN groet en GEEN ondertekening — die worden automatisch toegevoegd.\n\nBeloof nooit prijzen, termijnen of concrete oplossingen. Verzin niets dat niet in de aanvraag staat.\n\nAntwoord UITSLUITEND met één JSON-object, zonder inleiding, zonder markdown-codeblok, in exact dit formaat:\n{\"onderwerp\": \"<onderwerpregel van de mail, begint met 'Uw aanvraag bij Weblotus'>\", \"mailtekst\": \"<volledige mailtekst, regeleinden als \\n>\", \"samenvatting\": \"<2 zinnen voor intern gebruik: wie, wat, welk type>\", \"urgentie\": \"<laag|normaal|hoog>\"}\n\nurgentie = hoog als de aanvrager een deadline, een storing of een dringend probleem noemt; laag als het een vrijblijvende vraag is; anders normaal."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -528,
+        0
+      ],
+      "id": "1756ec5d-e932-488b-ab88-63e9e17746db",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        -528,
+        192
+      ],
+      "id": "ca382a0d-6608-4abe-af64-cfe0f6a5e4a4",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "iQkBEyweExtSz2Hd",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Uitvoer van de AI Agent ophalen\nconst agent = $input.first().json;\nlet ruw = agent.output ?? agent.text ?? '';\n\n// Eventuele markdown-codeblokken verwijderen\nruw = String(ruw).replace(/```json/gi, '').replace(/```/g, '').trim();\n\n// Gegevens van de aanvrager (uit Edit Fields)\nconst aanvraag = $('Edit Fields').first().json;\n\n// Vaste afsluiter — altijd letterlijk identiek, de AI schrijft dit nooit\nconst AFSLUITER = '\\n\\nDavid neemt binnen twee werkdagen per e-mail contact met je op.\\n\\nMet vriendelijke groeten,\\n\\nDavid Genyn\\nWeblotus – https://weblotus.be';\n\nlet onderwerp, mailtekst, samenvatting, urgentie, parseFout = false;\n\ntry {\n  const j = JSON.parse(ruw);\n  onderwerp    = j.onderwerp;\n  mailtekst    = j.mailtekst;\n  samenvatting = j.samenvatting;\n  urgentie     = j.urgentie;\n  if (!onderwerp || !mailtekst) throw new Error('lege velden');\n\n  // Verdediging: knip weg wat de agent tóch als afsluiter schreef\n  mailtekst = String(mailtekst)\n    .replace(/David neemt binnen twee werkdagen[\\s\\S]*$/i, '')\n    .replace(/Met vriendelijke groeten[\\s\\S]*$/i, '');\n\n} catch (e) {\n  // Fallback: vaste mail, zodat de aanvrager altijd antwoord krijgt\n  parseFout    = true;\n  onderwerp    = 'Uw aanvraag bij Weblotus';\n  mailtekst    = `Beste ${aanvraag.naam},\\n\\nBedankt voor je aanvraag via weblotus.be. Ik heb je bericht goed ontvangen.`;\n  samenvatting = `(agent gaf geen geldige JSON) ${aanvraag.naam} – ${aanvraag.type}: ${String(aanvraag.bericht).slice(0, 120)}`;\n  urgentie     = 'normaal';\n}\n\n// Vaste afsluiter toevoegen (geldt ook voor de fallback)\nmailtekst = String(mailtekst).trim() + AFSLUITER;\n\nreturn [{\n  json: {\n    naam:         aanvraag.naam,\n    email:        aanvraag.email,\n    bedrijf:      aanvraag.bedrijf,\n    telefoon:     aanvraag.telefoon,\n    type:         aanvraag.type,\n    bericht:      aanvraag.bericht,\n    ontvangen:    aanvraag.ontvangen,\n    onderwerp,\n    mailtekst,\n    samenvatting,\n    urgentie,\n    parseFout\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "45fbd92c-e90e-4c1d-bad3-ade0b8923e88",
+      "name": "Parse agent"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "157Cl79hybP_QOeaR89-Ps1AoQny4_7PXjvjir2wffDc",
+          "mode": "list",
+          "cachedResultName": "Intake AI",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/157Cl79hybP_QOeaR89-Ps1AoQny4_7PXjvjir2wffDc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/157Cl79hybP_QOeaR89-Ps1AoQny4_7PXjvjir2wffDc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "naam",
+              "displayName": "naam",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bedrijf",
+              "displayName": "bedrijf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telefoon",
+              "displayName": "telefoon",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bericht",
+              "displayName": "bericht",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "samenvatting",
+              "displayName": "samenvatting",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgentie",
+              "displayName": "urgentie",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ontvangen",
+              "displayName": "ontvangen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "handlingExtraData": "ignoreIt"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "b63f0678-076a-4ea0-9eb6-e9c5630bba49",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7yHnSa6AgK2OwRFb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "info@weblotus.be",
+        "toEmail": "={{ $('Parse agent').item.json.email }}",
+        "subject": "={{ $('Parse agent').item.json.onderwerp }}",
+        "emailFormat": "text",
+        "text": "={{ $('Parse agent').item.json.mailtekst }}",
+        "options": {
+          "appendAttribution": false,
+          "bccEmail": "info@weblotus.be",
+          "replyTo": "info@weblotus.be"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        144,
+        0
+      ],
+      "id": "a33af3ac-b5cb-41ba-891b-0f2f15beb8de",
+      "name": "Send an Email",
+      "webhookId": "b8230848-00b3-4873-b9bb-14d31eeb8192",
+      "credentials": {
+        "smtp": {
+          "id": "nnfhL3VXm4pbdZyV",
+          "name": "SMTP inf@weblotus.be"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7534115158",
+        "text": "=Nieuwe aanvraag – {{ $('Parse agent').item.json.type }} – urgentie {{ $('Parse agent').item.json.urgentie }}  {{ $('Parse agent').item.json.naam }} ({{ $('Parse agent').item.json.bedrijf }}) {{ $('Parse agent').item.json.email }} {{ $('Parse agent').item.json.telefoon }}  Samenvatting: {{ $('Parse agent').item.json.samenvatting }}  Verzonden mail: {{ $('Parse agent').item.json.mailtekst }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        0
+      ],
+      "id": "7b62acee-bab5-4ecf-8d61-094ad0dbec2a",
+      "name": "Send a text message",
+      "webhookId": "3c9765a8-c4a9-4e48-9bd6-fa149a4a574e",
+      "credentials": {
+        "telegramApi": {
+          "id": "wcPgOanPHtzjtJDD",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse agent": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1848210d-a65a-449d-8fd6-7506f31e2908",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b905c810d91b354b915544be0ce6c0942dde769c735c3326565f86b320468544"
+  },
+  "nodeGroups": [],
+  "id": "gtsfFULmh07AY67z",
+  "tags": []
+}
