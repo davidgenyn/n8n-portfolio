@@ -164,7 +164,6 @@ Belgische kmo's op Microsoft 365 werken, niet op Google Workspace.
 
 ![Workflow](project5a.png)
 
-![Workflow](project5.png)
 
 ## Project 6 — Contactformulier (webhook)
 
