@@ -138,19 +138,31 @@ afkomstig van Energy-Charts (Fraunhofer ISE) — licentie CC BY 4.0.
 
 ![Workflow](project4.png)
 
-## Project 5 — Outlook AI-classificatie
-Sorteert inkomende Outlook-mail automatisch in mappen op basis van
-AI-classificatie. Microsoft 365 is de standaard bij Belgische KMO's,
-waardoor dit de zakelijk meest bruikbare variant van project 2 is.
+## Project 5a — Microsoft Outlook AI-classificatie
 
-- Microsoft Outlook Trigger (elke 5 min) → Text Classifier (Claude Haiku,
-  5 categorieën) → HTTP Request per categorie (Microsoft Graph API)
+Leest inkomende mail in Outlook, classificeert elke mail met AI in
+vijf categorieën en verplaatst hem automatisch naar de juiste map.
+De Microsoft-tegenhanger van project 2 — relevant omdat de meeste
+Belgische kmo's op Microsoft 365 werken, niet op Google Workspace.
+
+### Wat de workflow doet
+
+- Microsoft Outlook Trigger (elke 5 min) → Text Classifier (Claude
+  Haiku, 5 categorieën: Factuur, Sollicitatie, Trading, Nieuwsbrief,
+  Overig) → per categorie een HTTP Request die de mail via de
+  Microsoft Graph API naar de juiste map verplaatst
 - Eigen app-registratie in Microsoft Entra ID met OAuth2 en
   gedelegeerde Graph-rechten (Mail.ReadWrite, offline_access)
-- De ingebouwde Outlook-node bleek het bericht-ID uit een expressie niet
-  correct door te geven (bekend probleem, 400/ErrorInvalidIdMalformed).
-  Na systematisch isoleren van de oorzaak vervangen door directe
-  Graph-aanroepen via HTTP Request — daarmee werkt de volledige keten.
+- De ingebouwde Outlook-node geeft het bericht-ID uit een expressie
+  niet correct door (bekend probleem, 400/ErrorInvalidIdMalformed).
+  Daarom verplaatsen directe Graph-aanroepen de berichten:
+  `POST /me/messages/{id}/move` met het map-ID als `destinationId`
+- Let op bij hergebruik: de veldnamen van de Outlook-trigger zijn
+  `subject`, `from` en `bodyPreview` (kleine letters) — wie de
+  classifier-tekst uit een Gmail-workflow kopieert, voedt de AI
+  ongemerkt met lege waarden en alles belandt in de restcategorie
+
+![Workflow](project5a.png)
 
 ![Workflow](project5.png)
 
