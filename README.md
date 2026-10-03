@@ -236,4 +236,4 @@ Kanttekening: de API-key-route is door Billit alleen toegestaan voor eigen/niet-
 Automatiseringservaring uit een eerder traject: 100+ NinjaTrader-strategieën (NinjaScript/C#) 
 ontwikkeld met AI-ondersteunde workflow. 
 
-Contact: lotusflow.contact@gmail.com
+Contact: info@weblotus.be
