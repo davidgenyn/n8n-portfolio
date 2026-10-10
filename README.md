@@ -219,6 +219,31 @@ Vanaf Windows test je de publieke webhook het betrouwbaarst vanuit CMD
 
 ![Workflow](project6a.png)
 
+## Project 6b – AI-agent Offerte (prijsindicatie)
+
+Een bezoeker van weblotus.be berekent zelf een prijsindicatie in een simulator met drie paden: Website, Automatisatie (zonder website) en Google & e-marketing (zonder website). Na het versturen maakt n8n daar automatisch een persoonlijke mail van, die eerst als concept bij Weblotus binnenkomt.
+
+**Werking**
+
+1. **Webhook** ontvangt de keuzes en gegevens van de simulator (via Tailscale Funnel naar de Dell-server).
+2. **Google Sheets** leest het tarievenblad *Tarieven*.
+3. **Code "Prijscontrole"** rekent alle bedragen opnieuw uit met de prijzen uit de Sheet. Prijzen uit de browser worden nooit gebruikt, onbekende of niet-toegelaten posten worden geweigerd, en onderhoud AI wordt automatisch toegevoegd bij elke AI-toepassing.
+4. **AI Agent (Claude Sonnet 4.5)** schrijft per gekozen onderdeel één zin en één vraag aan de klant, in de u-vorm.
+5. **Code "Offerte samenstellen"** bouwt de mail op in HTML en in gewone tekst: prijstabel, totalen, de vaste vermelding "vrijblijvende prijsindicatie, geen bindende offerte", afsluiter en huisstijl.
+6. **Google Sheets** schrijft elke aanvraag weg in het tabblad *Offertes*.
+7. **Send Email** stuurt de mail als CONCEPT naar info@weblotus.be, met Reply-To naar de klant.
+8. **Telegram** meldt dat er een nieuwe aanvraag binnen is.
+
+**AI betrouwbaar maken**
+
+- De AI noemt nooit bedragen: alle cijfers komen uit de code en de Sheet.
+- Aanhef, bedankzin, vaste vermelding, afsluiter en opmaak staan vast in de code, niet in de AI-prompt.
+- De code controleert de AI-tekst op bedragen en groeten en meldt afwijkingen in een TER INFO-blok bovenaan de conceptmail.
+- Alle tekst van de AI en van de klant wordt veilig gemaakt voor HTML, zodat via het formulier geen opmaak of links in de mail terechtkomen.
+- Niets gaat automatisch naar de klant: de mail wordt eerst nagekeken.
+
+  ![Project 6b](project6b.png)
+
 
 ## Project 7 — Billit/Peppol e-facturatie (sandbox)
 
