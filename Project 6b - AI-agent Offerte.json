@@ -1,0 +1,449 @@
+{
+  "name": "Project 6b - AI-agent Offerte",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "b2d6ca20-16f1-4796-b87a-2b30a2648412",
+        "options": {
+          "allowedOrigins": "https://weblotus.be"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -752,
+        -240
+      ],
+      "id": "35a7d00e-52ed-4784-ac16-e660875d2791",
+      "name": "Webhook",
+      "webhookId": "b2d6ca20-16f1-4796-b87a-2b30a2648412"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1qdOXl3b8Kv1_lWMeTW_-2V7BMBrYt4pt6axr5MVGPtE",
+          "mode": "list",
+          "cachedResultName": "Tarieven",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qdOXl3b8Kv1_lWMeTW_-2V7BMBrYt4pt6axr5MVGPtE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Tarieven",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qdOXl3b8Kv1_lWMeTW_-2V7BMBrYt4pt6axr5MVGPtE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -544,
+        -240
+      ],
+      "id": "d753d06b-2fe0-4df2-9e4f-296cb1d7b656",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7yHnSa6AgK2OwRFb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prijscontrole: rekent de prijsindicatie uit met de prijzen uit de Sheet Tarieven.\n// De aanvraag van de site levert alleen id's en aantallen; prijzen uit de aanvraag worden nooit gebruikt.\n\nconst body = $('Webhook').first().json.body || {};\nconst rijen = $input.all().map(i => i.json);\n\n// Tarieven per id, uit de Sheet\nconst tarief = {};\nfor (const r of rijen) {\n  tarief[String(r.id).trim()] = r;\n}\n\n// Welke posten bij welk pad horen (zelfde regels als offerte.html)\nconst TOEGELATEN = {\n  website:       ['basiswebsite', 'extra_pagina', 'onderhoud_website', 'seo_geo', 'ai_contactformulier', 'automatisering', 'onderhoud_ai'],\n  automatisatie: ['ai_contactformulier', 'automatisering', 'onderhoud_ai'],\n  google:        ['seo_geo']\n};\nconst AI_POSTEN = ['ai_contactformulier', 'automatisering'];\nconst MAX_PAGINAS = 20;\n\nconst pad = String(body.pad || '').trim();\nconst padGeldig = Object.prototype.hasOwnProperty.call(TOEGELATEN, pad);\nconst keuzes = Array.isArray(body.keuzes) ? body.keuzes : [];\n\nconst gekozen = {};   // id -> aantal\nconst geweigerd = [];\n\nfor (const k of keuzes) {\n  const id = String((k && k.id) || '').trim();\n  if (!padGeldig || !tarief[id] || !TOEGELATEN[pad].includes(id) || gekozen[id]) {\n    geweigerd.push(id || '(leeg)');\n    continue;\n  }\n  let aantal = 1;\n  if (id === 'extra_pagina') {\n    aantal = Math.floor(Number(k.aantal));\n    if (!(aantal >= 1)) aantal = 1;\n    if (aantal > MAX_PAGINAS) aantal = MAX_PAGINAS;\n  }\n  gekozen[id] = aantal;\n}\n\n// Verplichte regel: onderhoud AI hoort bij elke AI-intake of automatisering, en nergens anders\nconst heeftAI = AI_POSTEN.some(id => gekozen[id]);\nif (heeftAI && !gekozen.onderhoud_ai && tarief.onderhoud_ai) {\n  gekozen.onderhoud_ai = 1;\n}\nif (!heeftAI && gekozen.onderhoud_ai) {\n  delete gekozen.onderhoud_ai;\n  geweigerd.push('onderhoud_ai');\n}\n\n// Posten opbouwen in de volgorde van de Sheet\nconst posten = rijen\n  .filter(r => gekozen[String(r.id).trim()])\n  .sort((a, b) => a.row_number - b.row_number)\n  .map(r => {\n    const id = String(r.id).trim();\n    const prijs = Number(r.prijs);\n    const aantal = gekozen[id];\n    return {\n      id: id,\n      post: r.post,\n      dienst: r.dienst,\n      betaling: r.betaling,\n      prijs: prijs,\n      aantal: aantal,\n      bedrag: prijs * aantal,\n      vanaf: String(r.vanaf).trim().toLowerCase() === 'ja'\n    };\n  });\n\nlet totaalEenmalig = 0, totaalMaandelijks = 0, vanafEenmalig = false, vanafMaandelijks = false;\nfor (const p of posten) {\n  if (p.betaling === 'maandelijks') {\n    totaalMaandelijks += p.bedrag;\n    vanafMaandelijks = vanafMaandelijks || p.vanaf;\n  } else {\n    totaalEenmalig += p.bedrag;\n    vanafEenmalig = vanafEenmalig || p.vanaf;\n  }\n}\n\nreturn [{\n  json: {\n    pad: padGeldig ? pad : 'ongeldig',\n    naam: String(body.naam || '').trim(),\n    email: String(body.email || '').trim(),\n    bedrijf: String(body.bedrijf || '').trim(),\n    telefoon: String(body.telefoon || '').trim(),\n    opmerking: String(body.opmerking || '').trim(),\n    omschrijving_automatisering: String(body.omschrijving_automatisering || '').trim(),\n    posten: posten,\n    totaalEenmalig: totaalEenmalig,\n    vanafEenmalig: vanafEenmalig,\n    totaalMaandelijks: totaalMaandelijks,\n    vanafMaandelijks: vanafMaandelijks,\n    geweigerd: geweigerd\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        -240
+      ],
+      "id": "7360c1e0-65fe-4579-aff4-d4ce4c12735b",
+      "name": "Prijscontrole"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Gegevens van de aanvraag:\nNaam: {{ $json.naam }}\nBedrijf: {{ $json.bedrijf || 'niet opgegeven' }}\nGekozen pad: {{ $json.pad }}\nGekozen onderdelen: {{ $json.posten.map(p => p.post + (p.aantal > 1 ? ' (' + p.aantal + ' stuks)' : '')).join(', ') }}\nOpmerking van de klant: {{ $json.opmerking || 'geen' }}\nOmschrijving automatisering: {{ $json.omschrijving_automatisering || 'geen' }}",
+        "options": {
+          "systemMessage": "Je bent de offerte-assistent van Weblotus, een eenmanszaak in België die websites in WordPress bouwt, AI-automatiseringen maakt en websites vindbaar maakt in Google en in AI-zoekmachines. Een bezoeker heeft op weblotus.be een prijsindicatie berekend. Jij schrijft per gekozen onderdeel een korte toelichting met een vraag, die in de e-mail met de prijsindicatie komt.\n\nRegels:\n1. Schrijf in correct Nederlands, ALTIJD in de u-vorm: u, uw. NOOIT je, jij of jouw.\n2. Noem NOOIT bedragen, prijzen, percentages of totalen.\n3. Verzin niets: geen diensten, termijnen, kortingen of beloftes die niet bij de gekozen onderdelen horen.\n4. Schrijf GEEN inleiding, GEEN bedankzin, GEEN aanhef, GEEN groet, GEEN afsluiter en GEEN ondertekening. Die worden apart toegevoegd.\n5. Antwoord UITSLUITEND met geldige JSON, zonder uitleg ervoor of erna en zonder codeblok, in deze vorm:\n{\"onderdelen\": [{\"onderdeel\": \"...\", \"zin\": \"...\", \"vraag\": \"...\"}], \"samenvatting\": \"...\"}\n\nInhoud van de velden:\n- onderdelen: één element per gekozen onderdeel, in dezelfde volgorde als in de aanvraag.\n  - onderdeel: de korte naam van het onderdeel, bijvoorbeeld \"Basiswebsite\", \"Extra pagina's\", \"SEO/GEO-optimalisatie\", \"AI-intake op contactformulier\", \"Automatisering op maat\", \"Onderhoud website\", \"Onderhoud AI\".\n  - zin: één zin over wat het onderdeel voor deze klant betekent, afgestemd op de klant en zijn opmerking.\n  - vraag: één concrete vraag die peilt naar informatie die nodig is om het onderdeel uit te werken. Bij Onderhoud AI en Onderhoud website: een lege tekst \"\".\n  - Bij Onderhoud AI: leg in de zin uit dat dit verplicht is bij elke AI-toepassing, omdat Weblotus ze draaiende houdt, fouten opvolgt en het AI-verbruik betaalt.\n  - Bij Automatisering op maat: verwijs in de zin kort naar de omschrijving van de klant en zeg dat de eindprijs volgt na een korte analyse.\n- samenvatting: één zin voor intern gebruik, die zegt wat de klant zoekt.\n\nAlle zinnen en vragen samen maximaal 180 woorden."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -720,
+        16
+      ],
+      "id": "0f6c4c61-b8c4-4cf1-83d9-e186bb1f044f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-4-5-20251001",
+          "mode": "list",
+          "cachedResultName": "Claude Haiku 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        -720,
+        208
+      ],
+      "id": "a06f86d2-dc04-4665-8fbe-11efa834fc60",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "iQkBEyweExtSz2Hd",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Offerte samenstellen: AI-tekst + berekening uit Prijscontrole = mail met prijsindicatie (HTML + tekst).\n// Bedragen, vaste zinnen, afsluiter en opmaak komen uit deze code, nooit uit de AI.\n\nconst pc = $('Prijscontrole').first().json;\nconst ruw = String($input.first().json.output || '');\nconst waarschuwingen = [];\nconst LOGO = 'https://weblotus.be/preview-x7k2/logo-mail.png';\n\n// Tekst veilig maken voor HTML\nfunction esc(t) {\n  return String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\n}\n\n// AI-antwoord lezen (```json-randjes eerst wegknippen)\nlet onderdelen = [];\nlet samenvatting = '';\nlet ruweAI = '';\nconst schoon = ruw.replace(/^\\s*```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/, '').trim();\ntry {\n  const p = JSON.parse(schoon);\n  samenvatting = String(p.samenvatting || '').trim();\n  onderdelen = (Array.isArray(p.onderdelen) ? p.onderdelen : []).map(o => ({\n    onderdeel: String(o.onderdeel || '').trim(),\n    zin: String(o.zin || '').trim(),\n    vraag: String(o.vraag || '').trim()\n  })).filter(o => o.onderdeel || o.zin);\n} catch (e) {\n  ruweAI = ruw.trim();\n  waarschuwingen.push('De AI-tekst kon niet gelezen worden als JSON; de ruwe tekst staat in de mail. Nakijken!');\n}\n\n// Verdediging: groet en bedragen in de AI-tekst\nconst aiTekst = onderdelen.map(o => o.zin + ' ' + o.vraag).join(' ') + ' ' + ruweAI;\nif (/met vriendelijke groet/i.test(aiTekst)) {\n  waarschuwingen.push('De AI schreef een groet in de tekst. Nakijken!');\n}\nif (/€|euro/i.test(aiTekst)) {\n  waarschuwingen.push('De AI noemt een bedrag in de tekst. Nakijken voor verzending!');\n}\n\n// Bedragen opmaken zoals in België: € 2.640\nfunction euro(n) {\n  return '€ ' + Math.round(Number(n)).toString().replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.');\n}\n\n// Prijsregels\nconst regels = pc.posten.map(p => ({\n  naam: p.aantal > 1 ? p.post + ' × ' + p.aantal : p.post,\n  bedrag: (p.vanaf ? 'vanaf ' : '') + euro(p.bedrag) + (p.betaling === 'maandelijks' ? ' per maand' : '')\n}));\n\n// Totalen: eenmalig samen, maandkosten per soort apart\nconst totalen = [];\nif (pc.totaalEenmalig > 0) {\n  totalen.push({ label: 'Eenmalige kost', bedrag: (pc.vanafEenmalig ? 'vanaf ' : '') + euro(pc.totaalEenmalig) });\n}\nconst ondAI = pc.posten.find(p => p.id === 'onderhoud_ai');\nconst ondWeb = pc.posten.find(p => p.id === 'onderhoud_website');\nif (ondAI) {\n  totalen.push({ label: 'Onderhoud AI per maand', bedrag: (ondAI.vanaf ? 'vanaf ' : '') + euro(ondAI.bedrag) });\n}\nif (ondWeb) {\n  totalen.push({ label: 'Onderhoud website per maand', bedrag: '(optioneel) ' + (ondWeb.vanaf ? 'vanaf ' : '') + euro(ondWeb.bedrag) });\n}\n\nif (pc.posten.length === 0) {\n  waarschuwingen.push('Er bleef geen enkele geldige post over. Deze aanvraag niet zomaar doorsturen!');\n}\nif (pc.geweigerd && pc.geweigerd.length > 0) {\n  waarschuwingen.push('Geweigerde id\\'s uit de aanvraag: ' + pc.geweigerd.join(', '));\n}\n\n// Vaste teksten\nconst aanhef = pc.naam ? 'Beste ' + pc.naam + ',' : 'Beste,';\nconst dank = pc.bedrijf ? 'Dank voor uw aanvraag voor ' + pc.bedrijf + '.' : 'Dank voor uw aanvraag.';\nconst vast1 = 'Dit is een vrijblijvende prijsindicatie, geen bindende offerte.';\nconst vast2 = 'De definitieve prijs hangt af van uw wensen en volgt na een gesprek. Alle prijzen zijn exclusief btw.';\nconst afs1 = 'Graag bespreek ik uw wensen verder in een kort gesprek (online) of via mail.';\nconst afs2 = 'U kunt hiervoor eenvoudig op deze e-mail antwoorden.';\n\nconst terInfoRegels = [\n  'Klant: ' + (pc.naam || '-') + ' <' + (pc.email || '-') + '>',\n  'Bedrijf: ' + (pc.bedrijf || '-') + ' | Telefoon: ' + (pc.telefoon || '-'),\n  'Pad: ' + pc.pad,\n  'Samenvatting: ' + (samenvatting || '-'),\n  'Waarschuwingen: ' + (waarschuwingen.length ? waarschuwingen.join(' | ') : 'geen')\n];\n\n// ---------- Tekstversie ----------\nconst toelTekst = onderdelen.length\n  ? onderdelen.map(o => '- ' + o.onderdeel + ' – ' + o.zin + (o.vraag ? '\\n  Vraag: ' + o.vraag : '')).join('\\n')\n  : ruweAI;\nconst klantmail = [\n  aanhef,\n  dank,\n  'Dit is de prijsindicatie:',\n  regels.map(r => '- ' + r.naam + ': ' + r.bedrag).join('\\n'),\n  totalen.map(t => t.label + ': ' + t.bedrag).join('\\n'),\n  vast1 + '\\n' + vast2,\n  toelTekst,\n  afs1 + '\\n' + afs2,\n  'Met vriendelijke groeten,',\n  'David',\n  'weblotus – https://weblotus.be'\n].filter(d => d && d.trim() !== '').join('\\n\\n');\nconst terInfo = ['TER INFO (niet doorsturen)'].concat(terInfoRegels).join('\\n');\nconst conceptTekst = terInfo + '\\n\\n==============================\\nMAIL AAN DE KLANT\\nOnderwerp: Uw prijsindicatie van Weblotus\\n==============================\\n\\n' + klantmail;\n\n// ---------- HTML-versie ----------\nconst NAVY = '#0d2340', BAND = '#0d2340', TXT = '#1e2d3d', LIJN = '#dbe6f0', VRAAG = '#17426f', ROZE = '#fd34ad';\nconst td = 'padding:7px 0;border-bottom:1px solid ' + LIJN + ';';\nconst prijsRijen = regels.map(r =>\n  '<tr><td style=\"' + td + '\">' + esc(r.naam) + '</td><td style=\"' + td + 'text-align:right;white-space:nowrap;\">' + esc(r.bedrag) + '</td></tr>'\n).join('');\nconst totaalRijen = totalen.map((t, i) =>\n  '<tr><td style=\"padding:' + (i === 0 ? '8px' : '2px') + ' 0 2px 0;\"><strong>' + esc(t.label) + '</strong></td>' +\n  '<td style=\"padding:' + (i === 0 ? '8px' : '2px') + ' 0 2px 0;text-align:right;white-space:nowrap;\"><strong>' + esc(t.bedrag) + '</strong></td></tr>'\n).join('');\nconst toelHtml = onderdelen.length\n  ? onderdelen.map(o =>\n      '<p style=\"margin:0 0 4px 0;\"><strong>' + esc(o.onderdeel) + '</strong> – ' + esc(o.zin) + '</p>' +\n      (o.vraag\n        ? '<p style=\"margin:0 0 16px 18px;color:' + VRAAG + ';\"><strong>Vraag:</strong> ' + esc(o.vraag) + '</p>'\n        : '<div style=\"height:12px;line-height:12px;font-size:12px;\">&nbsp;</div>')\n    ).join('')\n  : '<p style=\"margin:0 0 16px 0;white-space:pre-line;\">' + esc(ruweAI) + '</p>';\n\nconst klantmailHtml =\n  '<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:784px;margin:0 auto;background:#ffffff;border-collapse:collapse;font-family:Segoe UI,Arial,sans-serif;\">' +\n  '<tr><td style=\"padding:28px 100px;color:' + TXT + ';font-size:15px;line-height:1.6;\">' +\n  '<p style=\"margin:0 0 16px 0;\">' + esc(aanhef) + '</p>' +\n  '<p style=\"margin:0 0 20px 0;\">' + esc(dank) + '</p>' +\n  '<p style=\"margin:0 0 8px 0;font-size:16px;\"><strong>Dit is de prijsindicatie:</strong></p>' +\n  '<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse;font-size:15px;\">' + prijsRijen + '</table>' +\n  '<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse;margin-top:12px;border-top:2px solid ' + NAVY + ';font-size:15px;\">' + totaalRijen + '</table>' +\n  '<p style=\"margin:20px 0 24px 0;font-size:13px;color:#5a6b7d;\">' + esc(vast1) + '<br>' + esc(vast2) + '</p>' +\n  toelHtml +\n  '<hr style=\"border:none;border-top:1px solid ' + LIJN + ';margin:8px 0 20px 0;\">' +\n  '<p style=\"margin:0 0 20px 0;\">' + esc(afs1) + '<br>' + esc(afs2) + '</p>' +\n  '<p style=\"margin:0 0 16px 0;\">Met vriendelijke groeten,</p>' +\n  '<p style=\"margin:0;\"><strong>David</strong></p>' +\n  '</td></tr>' +\n  '<tr><td bgcolor=\"' + BAND + '\" style=\"background:' + BAND + ';padding:16px 100px;\">' +\n  '<table cellpadding=\"0\" cellspacing=\"0\"><tr>' +\n  '<td><img src=\"' + LOGO + '\" width=\"56\" height=\"56\" alt=\"Weblotus\" style=\"display:block;border:0;\"></td>' +\n  '<td style=\"padding-left:12px;color:#ffffff;font-size:20px;font-weight:600;letter-spacing:1px;font-family:Segoe UI,Arial,sans-serif;\">weblotus</td>' +\n  '<td style=\"padding-left:14px;font-size:14px;font-family:Segoe UI,Arial,sans-serif;\"><a href=\"https://weblotus.be\" style=\"color:' + ROZE + ';text-decoration:none;\">https://weblotus.be</a></td>' +\n  '</tr></table></td></tr></table>';\n\nconst terInfoHtml =\n  '<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:784px;margin:0 auto 18px auto;border-collapse:collapse;\">' +\n  '<tr><td style=\"padding:14px;background:#f3f3f1;border:1px solid #d6d6d0;font-family:Consolas,monospace;font-size:13px;color:#444;line-height:1.5;\">' +\n  '<strong>TER INFO (niet doorsturen)</strong><br>' + terInfoRegels.map(esc).join('<br>') +\n  '</td></tr></table>';\n\nconst conceptHtml =\n  '<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head>' +\n  '<body style=\"margin:0;padding:24px;background:#eef2f6;\">' + terInfoHtml + klantmailHtml + '</body></html>';\n\nreturn [{\n  json: {\n    onderwerp: 'Uw prijsindicatie van Weblotus',\n    klantEmail: pc.email,\n    naam: pc.naam,\n    pad: pc.pad,\n    samenvatting: samenvatting,\n    totaalEenmalig: pc.totaalEenmalig,\n    vanafEenmalig: pc.vanafEenmalig,\n    totaalMaandelijks: pc.totaalMaandelijks,\n    vanafMaandelijks: pc.vanafMaandelijks,\n    waarschuwingen: waarschuwingen,\n    klantmail: klantmail,\n    terInfo: terInfo,\n    conceptTekst: conceptTekst,\n    conceptHtml: conceptHtml\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        16
+      ],
+      "id": "b15fe177-3b54-4aec-a7c4-0dd58c2f9dfe",
+      "name": "Offerte samenstellen"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1qdOXl3b8Kv1_lWMeTW_-2V7BMBrYt4pt6axr5MVGPtE",
+          "mode": "list",
+          "cachedResultName": "Tarieven",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qdOXl3b8Kv1_lWMeTW_-2V7BMBrYt4pt6axr5MVGPtE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1402069360,
+          "mode": "list",
+          "cachedResultName": "Offertes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1qdOXl3b8Kv1_lWMeTW_-2V7BMBrYt4pt6axr5MVGPtE/edit#gid=1402069360"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "datum": "={{ $now.setZone('Europe/Brussels').toFormat('yyyy-LL-dd HH:mm') }}",
+            "naam": "={{ $json.naam }}",
+            "email": "={{ $json.klantEmail }}",
+            "bedrijf": "={{ $('Prijscontrole').first().json.bedrijf }}",
+            "telefoon": "={{ $('Prijscontrole').first().json.telefoon }}",
+            "pad": "={{ $json.pad }}",
+            "posten": "={{ $('Prijscontrole').first().json.posten.map(p => p.id + ' ×' + p.aantal).join(', ') }}",
+            "eenmalig": "={{ $json.totaalEenmalig }}",
+            "maandelijks": "={{ $json.totaalMaandelijks }}",
+            "samenvatting": "={{ $json.samenvatting }}",
+            "waarschuwingen": "={{ $json.waarschuwingen.join(' | ') }}",
+            "status": "concept"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "datum",
+              "displayName": "datum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "naam",
+              "displayName": "naam",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bedrijf",
+              "displayName": "bedrijf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telefoon",
+              "displayName": "telefoon",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pad",
+              "displayName": "pad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "posten",
+              "displayName": "posten",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "eenmalig",
+              "displayName": "eenmalig",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "maandelijks",
+              "displayName": "maandelijks",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "samenvatting",
+              "displayName": "samenvatting",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "waarschuwingen",
+              "displayName": "waarschuwingen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        16
+      ],
+      "id": "4c9443e7-a9e2-4170-8215-379e32ebe300",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7yHnSa6AgK2OwRFb",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "Weblotus <info@weblotus.be>",
+        "toEmail": "info@weblotus.be",
+        "subject": "=CONCEPT - Prijsindicatie {{ $('Offerte samenstellen').first().json.naam }}",
+        "html": "={{ $('Offerte samenstellen').first().json.conceptHtml }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "={{ $('Offerte samenstellen').first().json.klantEmail }}"
+        }
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        48,
+        16
+      ],
+      "id": "7b607757-4ed3-43fa-ad8c-0ecc73ca9fc2",
+      "name": "Send an Email",
+      "webhookId": "51b9ea52-507f-4834-839f-e26e7b3e7a58",
+      "credentials": {
+        "smtp": {
+          "id": "nnfhL3VXm4pbdZyV",
+          "name": "SMTP inf@weblotus.be"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "7534115158",
+        "text": "={{ (() => { const o = $('Offerte samenstellen').first().json; const e = n => String(n).replace(/\\B(?=(\\d{3})+(?!\\d))/g, '.'); return ['Nieuwe aanvraag prijsindicatie', 'Naam: ' + o.naam, 'Pad: ' + o.pad, 'Eenmalig: ' + (o.vanafEenmalig ? 'vanaf ' : '') + '€ ' + e(o.totaalEenmalig), 'Per maand: ' + (o.vanafMaandelijks ? 'vanaf ' : '') + '€ ' + e(o.totaalMaandelijks), 'Waarschuwingen: ' + (o.waarschuwingen.join(' | ') || 'geen'), 'Concept staat in info@weblotus.be'].join('\\n'); })() }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        16
+      ],
+      "id": "25b01be5-ac97-4218-8611-c7a551c9bb2a",
+      "name": "Send a text message",
+      "webhookId": "08daaae8-cf85-418d-9131-279857b86215",
+      "credentials": {
+        "telegramApi": {
+          "id": "wcPgOanPHtzjtJDD",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Prijscontrole",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prijscontrole": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Offerte samenstellen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Offerte samenstellen": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "q2RIfG0I8uPefK3a",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "4c89a9c4-7b30-460a-8f04-08744c5339f4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b905c810d91b354b915544be0ce6c0942dde769c735c3326565f86b320468544"
+  },
+  "nodeGroups": [],
+  "id": "FSsmy4gCk9eGZ2Gm",
+  "tags": []
+}
