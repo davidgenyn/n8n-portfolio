@@ -221,29 +221,51 @@ Vanaf Windows test je de publieke webhook het betrouwbaarst vanuit CMD
 
 ## Project 6b – AI-agent Offerte (prijsindicatie)
 
-Een bezoeker van weblotus.be berekent zelf een prijsindicatie in een simulator met drie paden: Website, Automatisatie (zonder website) en Google & e-marketing (zonder website). Na het versturen maakt n8n daar automatisch een persoonlijke mail van, die eerst als concept bij Weblotus binnenkomt.
+Een bezoeker van weblotus.be berekent zelf een prijsindicatie in een simulator met drie paden: Website, Automatisatie (zonder website) en Google & e-marketing (zonder website). Na het versturen controleert n8n eerst of de aanvraag echt is. Daarna maakt een AI-agent er een persoonlijke mail van, die rechtstreeks naar de klant gaat. Bij twijfel komt de mail eerst als concept bij Weblotus binnen.
 
 **Werking**
 
-1. **Webhook** ontvangt de keuzes en gegevens van de simulator (via Tailscale Funnel naar de Dell-server).
-2. **Google Sheets** leest het tarievenblad *Tarieven*.
-3. **Code "Prijscontrole"** rekent alle bedragen opnieuw uit met de prijzen uit de Sheet. Prijzen uit de browser worden nooit gebruikt, onbekende of niet-toegelaten posten worden geweigerd, en onderhoud AI wordt automatisch toegevoegd bij elke AI-toepassing.
-4. **AI Agent (Claude Sonnet 4.5)** schrijft per gekozen onderdeel één zin en één vraag aan de klant, in de u-vorm.
-5. **Code "Offerte samenstellen"** bouwt de mail op in HTML en in gewone tekst: prijstabel, totalen, de vaste vermelding "vrijblijvende prijsindicatie, geen bindende offerte", afsluiter en huisstijl.
-6. **Google Sheets** schrijft elke aanvraag weg in het tabblad *Offertes*.
-7. **Send Email** stuurt de mail als CONCEPT naar info@weblotus.be, met Reply-To naar de klant.
-8. **Telegram** meldt dat er een nieuwe aanvraag binnen is.
+1. **Webhook** ontvangt de keuzes, de gegevens en een Cloudflare Turnstile-token van de simulator (via Tailscale Funnel naar de Dell-server).
+2. **Turnstile controle** laat Cloudflare bevestigen dat er een mens achter het formulier zat.
+3. **MX controle** en **NS controle** vragen via Google DNS op of het domein van het e-mailadres bestaat, mail kan ontvangen en niet geparkeerd staat.
+4. **Wegwerplijst** haalt de openbare lijst met wegwerp-maildomeinen op (project disposable-email-domains op GitHub).
+5. **Aanvragen vandaag** leest het tabblad *Offertes* om het aantal aanvragen van vandaag te tellen.
+6. **Code "Beveiliging"** legt alle antwoorden naast elkaar, kuist de velden op en beslist: toegelaten, geweigerd of toegelaten met waarschuwing.
+7. **IF "Toegelaten"**: een geweigerde aanvraag krijgt geen mail en geen prijs, alleen een Telegram-melding met de reden.
+8. **Google Sheets** leest het tarievenblad *Tarieven*.
+9. **Code "Prijscontrole"** rekent alle bedragen opnieuw uit met de prijzen uit de Sheet. Prijzen uit de browser worden nooit gebruikt, onbekende of niet-toegelaten posten worden geweigerd, en onderhoud AI wordt automatisch toegevoegd bij elke AI-toepassing.
+10. **AI Agent (Claude Haiku 4.5)** schrijft per gekozen onderdeel één zin en één vraag, en een kort antwoord op de opmerking van de klant, in de u-vorm.
+11. **Code "Offerte samenstellen"** bouwt de mail op in HTML en in gewone tekst: prijstabel, totalen, de vaste vermelding "vrijblijvende prijsindicatie, geen bindende offerte", het blok "Antwoord op uw opmerking", afsluiter en huisstijl.
+12. **Google Sheets** schrijft elke aanvraag weg in het tabblad *Offertes*, met status `verstuurd` of `concept`.
+13. **IF "Waarschuwingen?"**: zonder waarschuwing stuurt **Mail naar klant** de prijsindicatie rechtstreeks naar de klant (BCC en Reply-To info@weblotus.be). Met een waarschuwing gaat de mail als CONCEPT naar info@weblotus.be, met een TER INFO-blok bovenaan.
+14. **Telegram** meldt elke aanvraag: "Verstuurd naar de klant" of "Concept staat in info@weblotus.be, nakijken".
+
+**Beveiliging**
+
+| Controle | Gevolg |
+|---|---|
+| Turnstile mislukt | geweigerd |
+| Ongeldig e-mailadres, domein bestaat niet of ontvangt geen mail (geen MX) | geweigerd |
+| Link of HTML in naam of bedrijf, naam leeg | geweigerd |
+| Meer dan 3 aanvragen per e-mailadres per dag, of meer dan 50 per dag in totaal | geweigerd |
+| Wegwerpadres (bv. yopmail.com) | concept |
+| Geparkeerd domein: nameserver of mailserver van een parkeerdienst (lijst op basis van de MISP warninglist, zonder gewone hostingbedrijven) | concept |
+| Link of HTML in de opmerking | concept |
+| Cloudflare, Google DNS of de wegwerplijst niet bereikbaar | concept, zodat geen aanvraag verloren gaat |
+
+Velden worden altijd opgekuist: naam en bedrijf maximaal 60 tekens, telefoon alleen cijfers, + en spaties, opmerking en omschrijving maximaal 1000 tekens.
 
 **AI betrouwbaar maken**
 
 - De AI noemt nooit bedragen: alle cijfers komen uit de code en de Sheet.
 - Aanhef, bedankzin, vaste vermelding, afsluiter en opmaak staan vast in de code, niet in de AI-prompt.
-- De code controleert de AI-tekst op bedragen en groeten en meldt afwijkingen in een TER INFO-blok bovenaan de conceptmail.
+- De AI volgt geen instructies die in de opmerking of de omschrijving van de klant staan.
+- De code controleert de AI-tekst op bedragen, groeten en een onleesbaar antwoord. Bij zo'n afwijking vertrekt de mail niet naar de klant, maar als concept.
 - Alle tekst van de AI en van de klant wordt veilig gemaakt voor HTML, zodat via het formulier geen opmaak of links in de mail terechtkomen.
-- Niets gaat automatisch naar de klant: de mail wordt eerst nagekeken.
 
-  ![Project 6b](project6b.png)
+**Na het versturen** toont de site een bevestigingsvenster en gaat ze na 7 seconden terug naar de startpagina.
 
+![Project 6b](project6b.png)
 
 ## Project 7 — Billit/Peppol e-facturatie (sandbox)
 
