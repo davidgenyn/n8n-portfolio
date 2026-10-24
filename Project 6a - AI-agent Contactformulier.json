@@ -305,7 +305,7 @@
           "parameters": [
             {
               "name": "secret",
-              "value": "0x4AAAAAAFTNECvqdvDAGw2QbennZl2H2E8"
+              "value": "JOUW_SECRET_KEY"
             },
             {
               "name": "response",
