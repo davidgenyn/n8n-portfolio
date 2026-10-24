@@ -214,6 +214,8 @@ Velden worden altijd opgekuist: naam en bedrijf maximaal 60 tekens, telefoon all
 
 ![Project 6a](project6a.png)
 
+
+
 ## Project 6b – AI-agent Offerte (prijsindicatie)
 
 Een bezoeker van weblotus.be berekent zelf een prijsindicatie in een simulator met drie paden: Website, Automatisatie (zonder website) en Google & e-marketing (zonder website). Na het versturen controleert n8n eerst of de aanvraag echt is. Daarna maakt een AI-agent er een persoonlijke mail van, die rechtstreeks naar de klant gaat. Bij twijfel komt de mail eerst als concept bij Weblotus binnen.
