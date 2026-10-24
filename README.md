@@ -165,59 +165,54 @@ Belgische kmo's op Microsoft 365 werken, niet op Google Workspace.
 ![Workflow](project5a.png)
 
 
-## Project 6a — AI-agent Contactformulier
+## Project 6a – AI-agent Contactformulier
 
-Het contactformulier van weblotus.be, volledig geautomatiseerd: een AI-agent
-leest elke aanvraag, schrijft een persoonlijke bevestigingsmail met gerichte
-vervolgvragen, en alles wordt geregistreerd en gemeld. Draait live achter de site.
+Een bezoeker van weblotus.be vult het contactformulier in. Na het versturen controleert n8n eerst of de aanvraag echt is. Daarna schrijft een AI-agent een persoonlijke bevestigingsmail met gerichte vervolgvragen, die rechtstreeks naar de klant gaat. Bij twijfel komt de mail eerst als waarschuwing bij Weblotus binnen.
 
-### Wat de workflow doet
+**Werking**
 
-1. **Webhook** — ontvangt de formuliergegevens als JSON (POST), met CORS
-   beperkt tot https://weblotus.be
-2. **Edit Fields** — pakt de velden uit en voegt een tijdstempel toe
-3. **AI Agent (Claude Sonnet 4.5)** — schrijft op basis van het type aanvraag
-   (website, automatisering, e-marketing) een bevestigingsmail in de je-vorm
-   met genummerde vervolgvragen, en levert uitsluitend JSON af: onderwerp,
-   mailtekst, samenvatting en urgentie (laag/normaal/hoog)
-4. **Parse agent (Code)** — parset de AI-output defensief: markdown-codeblokken
-   worden gestript, en bij ongeldige output vertrekt een vaste fallback-mail
-   zodat de aanvrager altijd antwoord krijgt
-5. **Google Sheets** — elke aanvraag als rij in de intake-sheet
-6. **Send Email (SMTP)** — bevestigingsmail naar de aanvrager, met BCC naar
-   de eigen mailbox en Reply-To op het eigen adres
-7. **Telegram** — directe melding met type, urgentie, samenvatting en de
-   verzonden mail
+1. **Webhook** ontvangt de formuliergegevens en een Cloudflare Turnstile-token (via Tailscale Funnel naar de Dell-server).
+2. **Turnstile controle** laat Cloudflare bevestigen dat er een mens achter het formulier zat.
+3. **MX controle** en **NS controle** vragen via Google DNS op of het domein van het e-mailadres bestaat, mail kan ontvangen en niet geparkeerd staat.
+4. **Wegwerplijst** haalt de openbare lijst met wegwerp-maildomeinen op (project disposable-email-domains op GitHub).
+5. **Aanvragen vandaag** leest de Sheet *Intake AI* om het aantal aanvragen van vandaag te tellen.
+6. **Code "Beveiliging"** legt alle antwoorden naast elkaar, kuist de velden op en beslist: toegelaten, geweigerd of toegelaten met waarschuwing.
+7. **IF "Toegelaten?"**: een geweigerde aanvraag krijgt geen mail en geen rij in de Sheet, alleen een Telegram-melding met de reden.
+8. **Edit Fields** zet de opgekuiste velden klaar, met een tijdstempel.
+9. **AI Agent (Claude Haiku 4.5)** schrijft op basis van het type aanvraag (website, automatisering, e-marketing) een bevestigingsmail in de u-vorm met genummerde vervolgvragen, en levert uitsluitend JSON af: onderwerp, mailtekst, samenvatting en urgentie.
+10. **Code "Parse agent"** leest de AI-output defensief, controleert de tekst en bouwt de mail op in HTML en in gewone tekst: vaste afsluiter, ondertekening en huisstijl.
+11. **Google Sheets** schrijft elke aanvraag weg in de Sheet *Intake AI*, met status `verstuurd` of `niet verstuurd` en de waarschuwingen.
+12. **IF "Waarschuwingen"**: zonder waarschuwing stuurt **Mail naar klant** de bevestiging rechtstreeks naar de klant (BCC en Reply-To info@weblotus.be). Met een waarschuwing gaat de mail als WAARSCHUWING naar info@weblotus.be, met een TER INFO-blok bovenaan.
+13. **Telegram** meldt elke aanvraag: "Verstuurd naar de klant" of "Waarschuwingsmail staat in info@weblotus.be, nakijken".
 
-### AI betrouwbaar maken
+**Beveiliging**
 
-Een taalmodel genereert alle tekst telkens opnieuw — ook de zinnen die altijd
-identiek moeten zijn. In de praktijk gaf dat af en toe een typfout in de
-ondertekening of een dubbele afsluiter. De oplossing zit in de architectuur,
-niet in de prompt:
+| Controle | Gevolg |
+|---|---|
+| Turnstile mislukt | geweigerd |
+| Ongeldig e-mailadres, domein bestaat niet of ontvangt geen mail (geen MX) | geweigerd |
+| Link of HTML in naam of bedrijf, naam of bericht leeg | geweigerd |
+| Meer dan 3 aanvragen per e-mailadres per dag, of meer dan 50 per dag in totaal | geweigerd |
+| Wegwerpadres (bv. yopmail.com) | waarschuwing |
+| Geparkeerd domein: nameserver of mailserver van een parkeerdienst (lijst op basis van de MISP warninglist, zonder gewone hostingbedrijven) | waarschuwing |
+| Link of HTML in het bericht | waarschuwing |
+| Cloudflare, Google DNS, de wegwerplijst of de Sheet niet bereikbaar | waarschuwing, zodat geen aanvraag verloren gaat |
 
-- de AI schrijft alleen wat per klant verschilt (bedanking, samenvatting,
-  vervolgvragen)
-- de vaste afsluiter, groet en ondertekening staan hard in de Code-node en
-  worden na het parsen aangeplakt — daar kan geen typfout in sluipen
-- schrijft het model tóch een eigen afsluiter, dan knipt de code die eerst
-  weg: een dubbele afsluiter is technisch onmogelijk
+Velden worden altijd opgekuist: naam en bedrijf maximaal 60 tekens, telefoon alleen cijfers, + en spaties, bericht maximaal 1000 tekens. Wegwerp- en parkeerlijsten zijn nooit volledig actueel; daarom geven ze een waarschuwing en geen weigering.
 
-### Publieke bereikbaarheid
+**AI betrouwbaar maken**
 
-De n8n-server staat achter een thuisrouter. Tailscale Funnel stelt uitsluitend
-het pad /webhook publiek beschikbaar over HTTPS; de editor en de credentials
-blijven onbereikbaar van buitenaf. Het formulier op de site post rechtstreeks
-naar die URL.
+- De AI schrijft alleen wat per klant verschilt: bedanking, samenvatting en vervolgvragen.
+- Afsluiter, groet, ondertekening en opmaak staan vast in de code, niet in de AI-prompt. Schrijft het model tóch een eigen afsluiter, dan knipt de code die weg.
+- De AI volgt geen instructies die in het bericht van de klant staan.
+- De code controleert de AI-tekst op bedragen, links, de je-vorm en onleesbare JSON. Bij zo'n afwijking vertrekt de mail niet naar de klant, maar als waarschuwing.
+- Alle tekst van de AI en van de klant wordt veilig gemaakt voor HTML, zodat via het formulier geen opmaak of links in de mail terechtkomen.
 
-### Testen
+**Na het versturen** toont de site een bevestigingsvenster dat na 7 seconden sluit.
 
-Vanaf Windows test je de publieke webhook het betrouwbaarst vanuit CMD
-(PowerShell verhaspelt de aanhalingstekens):
+**Testen** kan alleen met een echte inzending vanaf de site: het Turnstile-token is eenmalig en vervalt na enkele minuten, dus een curl-test of een herhaalde execution wordt door Cloudflare afgewezen. Elke test is: Publish, formulier versturen, resultaat bekijken onder Executions.
 
-    curl -X POST https://<funnel-url>/webhook/<pad> -H "Content-Type: application/json" -d "{\"naam\":\"Jan Test\",\"email\":\"jan@voorbeeld.be\",\"bericht\":\"test\"}"
-
-![Workflow](project6a.png)
+![Project 6a](project6a.png)
 
 ## Project 6b – AI-agent Offerte (prijsindicatie)
 
