@@ -264,6 +264,7 @@ Velden worden altijd opgekuist: naam en bedrijf maximaal 60 tekens, telefoon all
 
 ![Project 6b](project6b.png)
 
+
 ## Project 7 — Billit/Peppol e-facturatie (sandbox)
 
 Doel: uit een binnenkomende bestelling automatisch een e-factuur aanmaken in Billit en verzenden via het Peppol-netwerk — de koppeling die sinds de Belgische B2B-e-facturatieplicht (1 jan 2026) voor elke KMO relevant is.
